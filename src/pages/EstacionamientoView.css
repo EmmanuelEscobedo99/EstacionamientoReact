@@ -1,0 +1,205 @@
+.sv-page {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.sv-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.sv-header h1 {
+  margin: 0;
+}
+
+.sv-header span {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.sv-lots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.sv-lot-card {
+  flex: 1 1 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  padding: 14px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.sv-lot-card:hover {
+  border-color: #4f46e5;
+}
+
+.sv-lot-card.selected {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+}
+
+.sv-lot-card span {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.sv-lot-card small {
+  color: #374151;
+  font-size: 12px;
+}
+
+.sv-panel {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  padding: 20px;
+}
+
+.sv-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.sv-panel-head h2 {
+  margin: 0;
+}
+
+.sv-panel-head > div > span {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.sv-counters {
+  display: flex;
+  gap: 10px;
+}
+
+.sv-counter {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sv-counter.free {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.sv-counter.occupied {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.sv-counter.total {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.sv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.sv-space {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 8px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  color: #fff;
+  font-family: inherit;
+  transition: transform 0.1s, opacity 0.15s;
+}
+
+.sv-space:hover {
+  transform: translateY(-2px);
+}
+
+.sv-space:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.sv-space.free {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+.sv-space.occupied {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.sv-space-num {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.sv-space-tipo {
+  font-size: 11px;
+  opacity: 0.9;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sv-switch {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  background: #fff;
+  opacity: 0.95;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  transition: background 0.15s;
+}
+
+.sv-switch .sv-switch-knob {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s;
+}
+
+.sv-switch.on {
+  justify-content: flex-start;
+}
+
+.sv-switch.on .sv-switch-knob {
+  transform: translateX(0);
+}
+
+.sv-switch.off {
+  justify-content: flex-start;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.sv-switch.off .sv-switch-knob {
+  transform: translateX(18px);
+}
+
+.sv-space-state {
+  font-size: 12px;
+  font-weight: 600;
+}

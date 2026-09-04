@@ -32,6 +32,11 @@ export default function Layout() {
             Inicio
           </NavLink>
           {(user.rol === 'ADMIN' || user.rol === 'EMPLEADO' || user.rol === 'CLIENTE') && (
+            <NavLink to="/estacionamiento" className={navLinkClass}>
+              Mapa
+            </NavLink>
+          )}
+          {(user.rol === 'ADMIN' || user.rol === 'EMPLEADO' || user.rol === 'CLIENTE') && (
             <NavLink to="/estacionamientos" className={navLinkClass}>
               Estacionamientos
             </NavLink>

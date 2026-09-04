@@ -8,6 +8,7 @@ import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Usuarios from './pages/Usuarios'
 import Estacionamientos from './pages/Estacionamientos'
+import EstacionamientoView from './pages/EstacionamientoView'
 import Espacios from './pages/Espacios'
 import Vehiculos from './pages/Vehiculos'
 import EntradasSalidas from './pages/EntradasSalidas'
@@ -28,6 +29,14 @@ function AppRoutes() {
         <Route element={<Layout />}>
           <Route path="/" element={<HomeRedirect />} />
 
+          <Route
+            path="/estacionamiento"
+            element={
+              <RoleRoute roles={['ADMIN', 'EMPLEADO', 'CLIENTE']}>
+                <EstacionamientoView />
+              </RoleRoute>
+            }
+          />
           <Route
             path="/estacionamientos"
             element={
