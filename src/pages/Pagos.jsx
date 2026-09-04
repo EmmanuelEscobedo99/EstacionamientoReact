@@ -1,0 +1,252 @@
+import { useEffect, useState } from 'react'
+import api from '../api/axios'
+import Modal from '../components/Modal'
+import '../components/CrudPage.css'
+import '../components/forms.css'
+
+const METODOS = ['EFECTIVO', 'TARJETA_CREDITO', 'TARJETA_DEBITO', 'TRANSFERENCIA']
+
+const emptyForm = {
+  monto: '',
+  fechaPago: '',
+  metodoPago: 'EFECTIVO',
+  codeEntradaSalida: '',
+}
+
+function metodoBadge(metodo) {
+  const map = {
+    EFECTIVO: 'badge-success',
+    TARJETA_CREDITO: 'badge-blue',
+    TARJETA_DEBITO: 'badge-warning',
+    TRANSFERENCIA: 'badge-gray',
+  }
+  return <span className={`badge ${map[metodo] || 'badge-gray'}`}>{metodo}</span>
+}
+
+function formatDate(dt) {
+  if (!dt) return '—'
+  return new Date(dt).toLocaleString()
+}
+
+export default function Pagos() {
+  const [items, setItems] = useState([])
+  const [entradas, setEntradas] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [form, setForm] = useState(emptyForm)
+  const [showModal, setShowModal] = useState(false)
+  const [editing, setEditing] = useState(null)
+
+  const load = async () => {
+    setLoading(true)
+    try {
+      const [pagoRes, entRes] = await Promise.all([
+        api.get('/pago'),
+        api.get('/entradaSalida'),
+      ])
+      setItems(pagoRes.data)
+      setEntradas(entRes.data)
+    } catch {
+      setError('No fue posible cargar los pagos.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    load()
+  }, [])
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value })
+  }
+
+  const openCreate = () => {
+    setEditing(null)
+    setForm({
+      ...emptyForm,
+      codeEntradaSalida: entradas[0]?.codeEntradaSalida || '',
+    })
+    setShowModal(true)
+  }
+
+  const openEdit = (item) => {
+    setEditing(item)
+    setForm({
+      monto: item.monto ?? '',
+      fechaPago: item.fechaPago || '',
+      metodoPago: item.metodoPago || 'EFECTIVO',
+      codeEntradaSalida: item.entradaSalida?.codeEntradaSalida || '',
+    })
+    setShowModal(true)
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+    try {
+      const payload = {
+        monto: Number(form.monto),
+        fechaPago: form.fechaPago ? form.fechaPago : null,
+        metodoPago: form.metodoPago,
+        entradaSalida: form.codeEntradaSalida
+          ? { codeEntradaSalida: Number(form.codeEntradaSalida) }
+          : null,
+      }
+      if (editing) {
+        await api.put(`/pago/${editing.codePago}`, payload)
+      } else {
+        await api.post('/pago', payload)
+      }
+      setShowModal(false)
+      load()
+    } catch {
+      setError('No fue posible guardar el pago.')
+    }
+  }
+
+  const handleDelete = async (id) => {
+    if (!confirm('¿Seguro que deseas eliminar este pago?')) return
+    try {
+      await api.delete(`/pago/${id}`)
+      load()
+    } catch {
+      setError('No fue posible eliminar el pago.')
+    }
+  }
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <div className="page-title">
+          <h1>Pagos</h1>
+          <span>Gestión de pagos de estacionamiento</span>
+        </div>
+        <button className="btn btn-primary" onClick={openCreate}>
+          + Nuevo Pago
+        </button>
+      </div>
+
+      {error && <div className="alert alert-error">{error}</div>}
+
+      <div className="table-card">
+        {loading ? (
+          <div className="loading">Cargando...</div>
+        ) : items.length === 0 ? (
+          <div className="empty-state">No hay pagos registrados.</div>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Monto</th>
+                <th>Fecha</th>
+                <th>Método</th>
+                <th>Entrada/Salida</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((p) => (
+                <tr key={p.codePago}>
+                  <td>{p.codePago}</td>
+                  <td>${p.monto}</td>
+                  <td>{formatDate(p.fechaPago)}</td>
+                  <td>{metodoBadge(p.metodoPago)}</td>
+                  <td>{p.entradaSalida?.codeEntradaSalida || '—'}</td>
+                  <td>
+                    <div className="actions">
+                      <button
+                        className="btn btn-sm btn-edit"
+                        onClick={() => openEdit(p)}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        className="btn btn-sm btn-danger"
+                        onClick={() => handleDelete(p.codePago)}
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <Modal
+        open={showModal}
+        title={editing ? 'Editar Pago' : 'Nuevo Pago'}
+        onClose={() => setShowModal(false)}
+      >
+        <form onSubmit={handleSubmit}>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Monto</label>
+              <input
+                type="number"
+                step="0.01"
+                name="monto"
+                value={form.monto}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Método de pago</label>
+              <select
+                name="metodoPago"
+                value={form.metodoPago}
+                onChange={handleChange}
+              >
+                {METODOS.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="form-group">
+            <label>Fecha de pago</label>
+            <input
+              type="datetime-local"
+              name="fechaPago"
+              value={form.fechaPago}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="form-group">
+            <label>Entrada/Salida asociada</label>
+            <select
+              name="codeEntradaSalida"
+              value={form.codeEntradaSalida}
+              onChange={handleChange}
+            >
+              {entradas.map((e) => (
+                <option key={e.codeEntradaSalida} value={e.codeEntradaSalida}>
+                  #{e.codeEntradaSalida} - {e.estado}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="form-actions">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setShowModal(false)}
+            >
+              Cancelar
+            </button>
+            <button type="submit" className="btn btn-primary">
+              Guardar
+            </button>
+          </div>
+        </form>
+      </Modal>
+    </div>
+  )
+}
