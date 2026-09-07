@@ -159,10 +159,10 @@ export default function EntradasSalidas() {
     form.codeEstacionamiento === '' || !estacionamientos.length
       ? espacios
       : espacios.filter(
-          (e) =>
-            e.estacionamiento?.codeEstacionamiento ===
-            Number(form.codeEstacionamiento)
-        )
+        (e) =>
+          e.estacionamiento?.codeEstacionamiento ===
+          Number(form.codeEstacionamiento)
+      )
 
   return (
     <div className="page">
@@ -194,6 +194,7 @@ export default function EntradasSalidas() {
                 <th>Total</th>
                 <th>Estado</th>
                 <th>Vehículo</th>
+                <th>Estacionamiento</th>
                 <th>Espacio</th>
                 <th>Acciones</th>
               </tr>
@@ -208,6 +209,7 @@ export default function EntradasSalidas() {
                   <td>{e.totalPagar != null ? `$${e.totalPagar}` : '—'}</td>
                   <td>{estadoBadge(e.estado)}</td>
                   <td>{e.vehiculo?.placas || '—'}</td>
+                  <td></td>
                   <td>{e.espacio?.numero || '—'}</td>
                   <td>
                     <div className="actions">
