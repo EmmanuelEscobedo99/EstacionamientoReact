@@ -13,6 +13,8 @@ const TABS = [
   { key: 'usuarios', label: 'Usuarios' },
 ]
 
+const PAGE_SIZE = 3
+
 function formatDate(dt) {
   if (!dt) return '—'
   return new Date(dt).toLocaleString()
@@ -28,12 +30,52 @@ function estadoBadge(estado) {
   return <span className={`badge ${map[estado] || 'badge-gray'}`}>{estado}</span>
 }
 
+function SearchInput({ value, onChange }) {
+  return (
+    <div className="archivo-search-wrap">
+      <input
+        className="archivo-search"
+        placeholder="Buscar..."
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </div>
+  )
+}
+
+function Pagination({ page, totalPages, onChange }) {
+  if (totalPages <= 1) return null
+  return (
+    <div className="archivo-pagination">
+      <button
+        className="btn btn-sm btn-secondary"
+        disabled={page <= 1}
+        onClick={() => onChange(page - 1)}
+      >
+        ‹ Anterior
+      </button>
+      <span>
+        Página {page} de {totalPages}
+      </span>
+      <button
+        className="btn btn-sm btn-secondary"
+        disabled={page >= totalPages}
+        onClick={() => onChange(page + 1)}
+      >
+        Siguiente ›
+      </button>
+    </div>
+  )
+}
+
 export default function Archivo() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [tab, setTab] = useState('vehiculos')
   const [confirm, setConfirm] = useState(null)
+  const [search, setSearch] = useState({})
+  const [page, setPage] = useState({})
 
   const load = async () => {
     setLoading(true)
@@ -77,7 +119,251 @@ export default function Archivo() {
       ]
     : []
 
-  const visible = (key) => (data ? (data[key] || []) : [])
+  const visible = (key) => (data ? data[key] || [] : [])
+
+  const setTabSearch = (key, value) => {
+    setSearch((prev) => ({ ...prev, [key]: value }))
+    setPage((prev) => ({ ...prev, [key]: 1 }))
+  }
+
+  const setTabPage = (key, value) => {
+    setPage((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const TAB_CONF = {
+    vehiculos: {
+      columns: ['ID', 'Placas', 'Marca', 'Modelo', 'Propietario', 'Acciones'],
+      empty: 'Sin vehículos ocultos.',
+      fields: [
+        (r) => r.codeVehiculo,
+        (r) => r.placas,
+        (r) => r.marca,
+        (r) => r.modelo,
+        (r) => r.propietario,
+        (r) => r.usuario?.email,
+      ],
+      row: (v) => (
+        <tr key={v.codeVehiculo}>
+          <td>{v.codeVehiculo}</td>
+          <td>{v.placas}</td>
+          <td>{v.marca || '—'}</td>
+          <td>{v.modelo || '—'}</td>
+          <td>{v.usuario?.email || v.propietario || '—'}</td>
+          <td>
+            <button
+              className="btn btn-sm btn-edit"
+              onClick={() =>
+                setConfirm({ tipo: 'vehiculo', id: v.codeVehiculo, nombre: v.placas })
+              }
+            >
+              Restaurar
+            </button>
+          </td>
+        </tr>
+      ),
+    },
+    entradas: {
+      columns: ['ID', 'Entrada', 'Salida', 'Horas', 'Total', 'Estado', 'Vehículo', 'Espacio', 'Acciones'],
+      empty: 'Sin entradas/salidas ocultas.',
+      fields: [
+        (r) => r.codeEntradaSalida,
+        (r) => r.fechaEntrada,
+        (r) => r.fechaSalida,
+        (r) => r.horasConsumidas,
+        (r) => r.totalPagar,
+        (r) => r.estado,
+        (r) => r.vehiculo?.placas,
+        (r) => r.espacio?.numero,
+      ],
+      row: (e) => (
+        <tr key={e.codeEntradaSalida}>
+          <td>{e.codeEntradaSalida}</td>
+          <td>{formatDate(e.fechaEntrada)}</td>
+          <td>{formatDate(e.fechaSalida)}</td>
+          <td>{e.horasConsumidas ?? '—'}</td>
+          <td>{e.totalPagar != null ? `$${e.totalPagar}` : '—'}</td>
+          <td>{estadoBadge(e.estado)}</td>
+          <td>{e.vehiculo?.placas || '—'}</td>
+          <td>{e.espacio?.numero || '—'}</td>
+          <td>
+            <button
+              className="btn btn-sm btn-edit"
+              onClick={() =>
+                setConfirm({
+                  tipo: 'entrada',
+                  id: e.codeEntradaSalida,
+                  nombre: `entrada #${e.codeEntradaSalida}`,
+                })
+              }
+            >
+              Restaurar
+            </button>
+          </td>
+        </tr>
+      ),
+    },
+    pagos: {
+      columns: ['ID', 'Monto', 'Fecha', 'Método', 'Entrada', 'Acciones'],
+      empty: 'Sin pagos ocultos.',
+      fields: [
+        (r) => r.codePago,
+        (r) => r.monto,
+        (r) => r.fechaPago,
+        (r) => r.metodoPago,
+        (r) => r.entradaSalida?.codeEntradaSalida,
+      ],
+      row: (p) => (
+        <tr key={p.codePago}>
+          <td>{p.codePago}</td>
+          <td>${p.monto}</td>
+          <td>{formatDate(p.fechaPago)}</td>
+          <td>{p.metodoPago}</td>
+          <td>{p.entradaSalida?.codeEntradaSalida || '—'}</td>
+          <td>
+            <button
+              className="btn btn-sm btn-edit"
+              onClick={() =>
+                setConfirm({
+                  tipo: 'pago',
+                  id: p.codePago,
+                  nombre: `pago #${p.codePago}`,
+                })
+              }
+            >
+              Restaurar
+            </button>
+          </td>
+        </tr>
+      ),
+    },
+    espacios: {
+      columns: ['ID', 'Número', 'Tipo', 'Disponible', 'Estacionamiento', 'Acciones'],
+      empty: 'Sin espacios ocultos.',
+      fields: [
+        (r) => r.codeEspacio,
+        (r) => r.numero,
+        (r) => r.tipo,
+        (r) => (r.disponible ? 'Sí' : 'No'),
+        (r) => r.estacionamiento?.nombre,
+      ],
+      row: (e) => (
+        <tr key={e.codeEspacio}>
+          <td>{e.codeEspacio}</td>
+          <td>{e.numero}</td>
+          <td>{e.tipo}</td>
+          <td>{e.disponible ? 'Sí' : 'No'}</td>
+          <td>{e.estacionamiento?.nombre || '—'}</td>
+          <td>
+            <button
+              className="btn btn-sm btn-edit"
+              onClick={() =>
+                setConfirm({
+                  tipo: 'espacio',
+                  id: e.codeEspacio,
+                  nombre: `espacio ${e.numero}`,
+                })
+              }
+            >
+              Restaurar
+            </button>
+          </td>
+        </tr>
+      ),
+    },
+    estacionamientos: {
+      columns: ['ID', 'Nombre', 'Ciudad', 'Capacidad', 'Tarifa/hora', 'Activo', 'Acciones'],
+      empty: 'Sin estacionamientos ocultos.',
+      fields: [
+        (r) => r.codeEstacionamiento,
+        (r) => r.nombre,
+        (r) => r.ciudad,
+        (r) => r.capacidadTotal,
+        (r) => r.tarifaHora,
+        (r) => (r.activo ? 'Sí' : 'No'),
+      ],
+      row: (e) => (
+        <tr key={e.codeEstacionamiento}>
+          <td>{e.codeEstacionamiento}</td>
+          <td>{e.nombre}</td>
+          <td>{e.ciudad || '—'}</td>
+          <td>{e.capacidadTotal}</td>
+          <td>${e.tarifaHora}</td>
+          <td>{e.activo ? 'Sí' : 'No'}</td>
+          <td>
+            <button
+              className="btn btn-sm btn-edit"
+              onClick={() =>
+                setConfirm({
+                  tipo: 'estacionamiento',
+                  id: e.codeEstacionamiento,
+                  nombre: e.nombre,
+                })
+              }
+            >
+              Restaurar
+            </button>
+          </td>
+        </tr>
+      ),
+    },
+    usuarios: {
+      columns: ['ID', 'Nombre', 'Email', 'Rol', 'Acciones'],
+      empty: 'Sin usuarios ocultos.',
+      fields: [
+        (r) => r.codeUsuario,
+        (r) => r.nombre,
+        (r) => r.apellido,
+        (r) => r.email,
+        (r) => r.rol,
+      ],
+      row: (u) => (
+        <tr key={u.codeUsuario}>
+          <td>{u.codeUsuario}</td>
+          <td>
+            {u.nombre || '—'} {u.apellido || ''}
+          </td>
+          <td>{u.email || '—'}</td>
+          <td>{u.rol}</td>
+          <td>
+            <button
+              className="btn btn-sm btn-edit"
+              onClick={() =>
+                setConfirm({
+                  tipo: 'usuario',
+                  id: u.codeUsuario,
+                  nombre: u.email || `usuario #${u.codeUsuario}`,
+                })
+              }
+            >
+              Restaurar
+            </button>
+          </td>
+        </tr>
+      ),
+    },
+  }
+
+  const buildPage = (conf) => {
+    const list = visible(tab)
+    const q = (search[tab] || '').trim().toLowerCase()
+    const filtered = q
+      ? list.filter((r) =>
+          conf.fields.some((f) => String(f(r) ?? '').toLowerCase().includes(q)),
+        )
+      : list
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+    const cur = Math.min(page[tab] || 1, totalPages)
+    return {
+      shown: filtered.slice((cur - 1) * PAGE_SIZE, cur * PAGE_SIZE),
+      totalPages,
+      cur,
+      totalCount: filtered.length,
+      totalAll: list.length,
+    }
+  }
+
+  const conf = TAB_CONF[tab]
+  const paged = buildPage(conf)
 
   return (
     <div className="page archivo-page">
@@ -123,267 +409,41 @@ export default function Archivo() {
           </div>
 
           <div className="table-card">
-            {tab === 'vehiculos' &&
-              (visible('vehiculos').length === 0 ? (
-                <div className="empty-state">Sin vehículos ocultos.</div>
-              ) : (
-                <table>
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Placas</th>
-                      <th>Marca</th>
-                      <th>Modelo</th>
-                      <th>Propietario</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visible('vehiculos').map((v) => (
-                      <tr key={v.codeVehiculo}>
-                        <td>{v.codeVehiculo}</td>
-                        <td>{v.placas}</td>
-                        <td>{v.marca || '—'}</td>
-                        <td>{v.modelo || '—'}</td>
-                        <td>{v.usuario?.email || v.propietario || '—'}</td>
-                        <td>
-                          <button
-                            className="btn btn-sm btn-edit"
-                            onClick={() =>
-                              setConfirm({ tipo: 'vehiculo', id: v.codeVehiculo, nombre: v.placas })
-                            }
-                          >
-                            Restaurar
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ))}
+            <div className="archivo-toolbar">
+              <SearchInput
+                value={search[tab] || ''}
+                onChange={(value) => setTabSearch(tab, value)}
+              />
+              <span className="archivo-results">
+                {paged.totalCount} de {paged.totalAll}
+              </span>
+            </div>
 
-            {tab === 'entradas' &&
-              (visible('entradas').length === 0 ? (
-                <div className="empty-state">Sin entradas/salidas ocultas.</div>
-              ) : (
+            {paged.totalCount === 0 ? (
+              <div className="empty-state">
+                {search[tab]
+                  ? 'Sin resultados para tu búsqueda.'
+                  : conf.empty}
+              </div>
+            ) : (
+              <>
                 <table>
                   <thead>
                     <tr>
-                      <th>ID</th>
-                      <th>Entrada</th>
-                      <th>Salida</th>
-                      <th>Horas</th>
-                      <th>Total</th>
-                      <th>Estado</th>
-                      <th>Vehículo</th>
-                      <th>Espacio</th>
-                      <th>Acciones</th>
+                      {conf.columns.map((c) => (
+                        <th key={c}>{c}</th>
+                      ))}
                     </tr>
                   </thead>
-                  <tbody>
-                    {visible('entradas').map((e) => (
-                      <tr key={e.codeEntradaSalida}>
-                        <td>{e.codeEntradaSalida}</td>
-                        <td>{formatDate(e.fechaEntrada)}</td>
-                        <td>{formatDate(e.fechaSalida)}</td>
-                        <td>{e.horasConsumidas ?? '—'}</td>
-                        <td>{e.totalPagar != null ? `$${e.totalPagar}` : '—'}</td>
-                        <td>{estadoBadge(e.estado)}</td>
-                        <td>{e.vehiculo?.placas || '—'}</td>
-                        <td>{e.espacio?.numero || '—'}</td>
-                        <td>
-                          <button
-                            className="btn btn-sm btn-edit"
-                            onClick={() =>
-                              setConfirm({
-                                tipo: 'entrada',
-                                id: e.codeEntradaSalida,
-                                nombre: `entrada #${e.codeEntradaSalida}`,
-                              })
-                            }
-                          >
-                            Restaurar
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
+                  <tbody>{paged.shown.map(conf.row)}</tbody>
                 </table>
-              ))}
-
-            {tab === 'pagos' &&
-              (visible('pagos').length === 0 ? (
-                <div className="empty-state">Sin pagos ocultos.</div>
-              ) : (
-                <table>
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Monto</th>
-                      <th>Fecha</th>
-                      <th>Método</th>
-                      <th>Entrada</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visible('pagos').map((p) => (
-                      <tr key={p.codePago}>
-                        <td>{p.codePago}</td>
-                        <td>${p.monto}</td>
-                        <td>{formatDate(p.fechaPago)}</td>
-                        <td>{p.metodoPago}</td>
-                        <td>{p.entradaSalida?.codeEntradaSalida || '—'}</td>
-                        <td>
-                          <button
-                            className="btn btn-sm btn-edit"
-                            onClick={() =>
-                              setConfirm({
-                                tipo: 'pago',
-                                id: p.codePago,
-                                nombre: `pago #${p.codePago}`,
-                              })
-                            }
-                          >
-                            Restaurar
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ))}
-
-            {tab === 'espacios' &&
-              (visible('espacios').length === 0 ? (
-                <div className="empty-state">Sin espacios ocultos.</div>
-              ) : (
-                <table>
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Número</th>
-                      <th>Tipo</th>
-                      <th>Disponible</th>
-                      <th>Estacionamiento</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visible('espacios').map((e) => (
-                      <tr key={e.codeEspacio}>
-                        <td>{e.codeEspacio}</td>
-                        <td>{e.numero}</td>
-                        <td>{e.tipo}</td>
-                        <td>{e.disponible ? 'Sí' : 'No'}</td>
-                        <td>{e.estacionamiento?.nombre || '—'}</td>
-                        <td>
-                          <button
-                            className="btn btn-sm btn-edit"
-                            onClick={() =>
-                              setConfirm({
-                                tipo: 'espacio',
-                                id: e.codeEspacio,
-                                nombre: `espacio ${e.numero}`,
-                              })
-                            }
-                          >
-                            Restaurar
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ))}
-
-            {tab === 'estacionamientos' &&
-              (visible('estacionamientos').length === 0 ? (
-                <div className="empty-state">Sin estacionamientos ocultos.</div>
-              ) : (
-                <table>
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Nombre</th>
-                      <th>Ciudad</th>
-                      <th>Capacidad</th>
-                      <th>Tarifa/hora</th>
-                      <th>Activo</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visible('estacionamientos').map((e) => (
-                      <tr key={e.codeEstacionamiento}>
-                        <td>{e.codeEstacionamiento}</td>
-                        <td>{e.nombre}</td>
-                        <td>{e.ciudad || '—'}</td>
-                        <td>{e.capacidadTotal}</td>
-                        <td>${e.tarifaHora}</td>
-                        <td>{e.activo ? 'Sí' : 'No'}</td>
-                        <td>
-                          <button
-                            className="btn btn-sm btn-edit"
-                            onClick={() =>
-                              setConfirm({
-                                tipo: 'estacionamiento',
-                                id: e.codeEstacionamiento,
-                                nombre: e.nombre,
-                              })
-                            }
-                          >
-                            Restaurar
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ))}
-
-            {tab === 'usuarios' &&
-              (visible('usuarios').length === 0 ? (
-                <div className="empty-state">Sin usuarios ocultos.</div>
-              ) : (
-                <table>
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Nombre</th>
-                      <th>Email</th>
-                      <th>Rol</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visible('usuarios').map((u) => (
-                      <tr key={u.codeUsuario}>
-                        <td>{u.codeUsuario}</td>
-                        <td>
-                          {u.nombre || '—'} {u.apellido || ''}
-                        </td>
-                        <td>{u.email || '—'}</td>
-                        <td>{u.rol}</td>
-                        <td>
-                          <button
-                            className="btn btn-sm btn-edit"
-                            onClick={() =>
-                              setConfirm({
-                                tipo: 'usuario',
-                                id: u.codeUsuario,
-                                nombre: u.email || `usuario #${u.codeUsuario}`,
-                              })
-                            }
-                          >
-                            Restaurar
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ))}
+                <Pagination
+                  page={paged.cur}
+                  totalPages={paged.totalPages}
+                  onChange={(value) => setTabPage(tab, value)}
+                />
+              </>
+            )}
           </div>
         </>
       ) : (
