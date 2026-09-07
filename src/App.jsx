@@ -13,6 +13,7 @@ import Espacios from './pages/Espacios'
 import Vehiculos from './pages/Vehiculos'
 import EntradasSalidas from './pages/EntradasSalidas'
 import Pagos from './pages/Pagos'
+import Archivo from './pages/Archivo'
 
 function HomeRedirect() {
   const { isAuthenticated } = useAuth()
@@ -82,6 +83,14 @@ function AppRoutes() {
             element={
               <RoleRoute roles={['ADMIN']}>
                 <Usuarios />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/archivo"
+            element={
+              <RoleRoute roles={['ADMIN', 'EMPLEADO']}>
+                <Archivo />
               </RoleRoute>
             }
           />

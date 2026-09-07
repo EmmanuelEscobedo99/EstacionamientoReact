@@ -66,6 +66,11 @@ export default function Layout() {
               Usuarios
             </NavLink>
           )}
+          {(user.rol === 'ADMIN' || user.rol === 'EMPLEADO') && (
+            <NavLink to="/archivo" className={navLinkClass}>
+              Archivo
+            </NavLink>
+          )}
         </div>
         <div className="navbar-user">
           <span className="user-name">

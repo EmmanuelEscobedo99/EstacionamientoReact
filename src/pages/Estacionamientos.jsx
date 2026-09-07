@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import api from '../api/axios'
 import Modal from '../components/Modal'
+import ConfirmDialog from '../components/ConfirmDialog'
 import '../components/CrudPage.css'
 import '../components/forms.css'
 
@@ -20,6 +21,7 @@ export default function Estacionamientos() {
   const [form, setForm] = useState(emptyForm)
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState(null)
+  const [confirmId, setConfirmId] = useState(null)
 
   const load = async () => {
     setLoading(true)
@@ -82,13 +84,14 @@ export default function Estacionamientos() {
     }
   }
 
-  const handleDelete = async (id) => {
-    if (!confirm('¿Seguro que deseas eliminar este estacionamiento?')) return
+  const handleDelete = async () => {
+    if (!confirmId) return
     try {
-      await api.delete(`/estacionamiento/${id}`)
+      await api.delete(`/estacionamiento/${confirmId}`)
+      setConfirmId(null)
       load()
     } catch {
-      setError('No fue posible eliminar el estacionamiento.')
+      setError('No fue posible ocultar el estacionamiento.')
     }
   }
 
@@ -151,9 +154,9 @@ export default function Estacionamientos() {
                       </button>
                       <button
                         className="btn btn-sm btn-danger"
-                        onClick={() => handleDelete(e.codeEstacionamiento)}
+                        onClick={() => setConfirmId(e.codeEstacionamiento)}
                       >
-                        Eliminar
+                        Ocultar
                       </button>
                     </div>
                   </td>
@@ -241,6 +244,16 @@ export default function Estacionamientos() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        open={confirmId !== null}
+        title="Ocultar estacionamiento"
+        message="El estacionamiento se quitará de la interfaz, pero sus datos se conservarán en el Archivo para tus estadísticas. ¿Deseas continuar?"
+        confirmLabel="Ocultar"
+        tone="danger"
+        onCancel={() => setConfirmId(null)}
+        onConfirm={handleDelete}
+      />
     </div>
   )
 }

@@ -1,0 +1,76 @@
+.archivo-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.archivo-stat {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.archivo-stat strong {
+  font-size: 1.4rem;
+  color: #111827;
+}
+
+.archivo-stat span {
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.archivo-stat-accent {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.archivo-stat-accent strong,
+.archivo-stat-accent span {
+  color: #fff;
+}
+
+.archivo-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.archivo-tab {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 0.5rem;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.archivo-tab:hover {
+  border-color: #c7d2fe;
+  color: #2563eb;
+}
+
+.archivo-tab.active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+
+.archivo-count {
+  display: inline-block;
+  min-width: 20px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  padding: 1px 6px;
+}
+
+.archivo-tab.active .archivo-count {
+  background: rgba(255, 255, 255, 0.25);
+}

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../api/axios'
 import Modal from '../components/Modal'
+import ConfirmDialog from '../components/ConfirmDialog'
 import OperacionModals from '../components/OperacionModals'
 import { useAuth } from '../context/AuthContext'
 import './Guide.css'
@@ -33,6 +34,8 @@ export default function Guide() {
   const [now, setNow] = useState(Date.now())
   const [modal, setModal] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [confirmLimpiar, setConfirmLimpiar] = useState(false)
+  const [limpiando, setLimpiando] = useState(false)
 
   const [vehForm, setVehForm] = useState({
     placas: '', marca: '', modelo: '', color: '', tipo: 'AUTO', codeUsuario: '',
@@ -107,6 +110,20 @@ export default function Guide() {
 
   const openPago = (entry) => setModal(`pago:${entry.codeEntradaSalida}`)
 
+  const limpiarInterfaz = async () => {
+    setLimpiando(true)
+    setError('')
+    try {
+      await api.post('/archivo/limpiar')
+      setConfirmLimpiar(false)
+      load()
+    } catch {
+      setError('No fue posible limpiar la interfaz.')
+    } finally {
+      setLimpiando(false)
+    }
+  }
+
   const guardarVehiculo = async () => {
     setSaving(true)
     setError('')
@@ -158,9 +175,18 @@ export default function Guide() {
           <h1>Panel de operación</h1>
           <span>Control de vehículos dentro del estacionamiento</span>
         </div>
-        <button className="btn btn-secondary" onClick={load} disabled={loading}>
-          Actualizar
-        </button>
+        <div className="guide-header-actions">
+          <button
+            className="btn btn-secondary"
+            onClick={() => setConfirmLimpiar(true)}
+            disabled={closedEntries.length === 0 || limpiando}
+          >
+            Limpiar interfaz
+          </button>
+          <button className="btn btn-secondary" onClick={load} disabled={loading}>
+            Actualizar
+          </button>
+        </div>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
@@ -398,6 +424,16 @@ export default function Guide() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        open={confirmLimpiar}
+        title="Limpiar interfaz"
+        message={`Se ocultarán ${closedEntries.length} estancia(s) terminada(s) del panel (y sus pagos). Ningún dato se borra: todo queda en el Archivo para tus estadísticas. ¿Deseas continuar?`}
+        confirmLabel="Limpiar"
+        tone="primary"
+        onCancel={() => setConfirmLimpiar(false)}
+        onConfirm={limpiarInterfaz}
+      />
     </div>
   )
 }
