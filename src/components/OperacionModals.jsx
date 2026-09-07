@@ -13,6 +13,17 @@ function nowLocal() {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
+function detalleEstancia(entry, fechaSalida) {
+  const inicio = Date.parse(entry.fechaEntrada)
+  const fin = fechaSalida ? Date.parse(fechaSalida) : Date.now()
+  const msec = Math.max(0, fin - inicio)
+  const horas = Math.max(0.25, Math.round((msec / 3600000) * 100) / 100)
+  const tarifa = Number(entry.espacio?.estacionamiento?.tarifaHora) || 0
+  const total =
+    tarifa > 0 ? Math.round(tarifa * horas * 100) / 100 : null
+  return { horasConsumidas: horas, totalPagar: total }
+}
+
 function entradaPayload(entry, overrides = {}) {
   return {
     fechaEntrada: entry.fechaEntrada,
@@ -55,6 +66,10 @@ export default function OperacionModals({
   const espacioId = modal?.startsWith('entrada:') ? modal.split(':')[2] : null
   const salidaId = tipo === 'salida' ? Number(modal.split(':')[1]) : null
   const pagoId = tipo === 'pago' ? Number(modal.split(':')[1]) : null
+  const entryActiva =
+    (tipo === 'salida' ? salidaId : tipo === 'pago' ? pagoId : null) === null
+      ? null
+      : entries.find((e) => e.codeEntradaSalida === (tipo === 'salida' ? salidaId : pagoId))
 
   const freeSpaces = spaces.filter((s) => s.disponible)
 
@@ -74,10 +89,9 @@ export default function OperacionModals({
       setError('')
     } else if (tipo === 'pago') {
       const entry = entries.find((e) => e.codeEntradaSalida === pagoId)
-      const tarifa = Number(entry?.espacio?.estacionamiento?.tarifaHora) || 0
-      const horas = entry?.horasConsumidas || 1
+      const detalle = entry ? detalleEstancia(entry, entry.fechaSalida) : null
       setPagForm({
-        monto: tarifa > 0 ? (tarifa * horas).toFixed(2) : '',
+        monto: detalle?.totalPagar != null ? detalle.totalPagar.toFixed(2) : '',
         metodoPago: 'EFECTIVO',
         fechaPago: nowLocal(),
       })
@@ -107,9 +121,13 @@ export default function OperacionModals({
       } else if (tipo === 'salida') {
         const entry = entries.find((e) => e.codeEntradaSalida === salidaId)
         if (!entry) throw new Error('registro no encontrado')
+        const pagado = Boolean(entry.pago) || entry.estado === 'PAGADO'
+        const detalle = detalleEstancia(entry, salForm.fechaSalida)
         await api.put(`/entradaSalida/${salidaId}`, entradaPayload(entry, {
           fechaSalida: salForm.fechaSalida,
-          estado: 'ACTIVO',
+          estado: pagado ? 'PAGADO' : 'FINALIZADO',
+          horasConsumidas: detalle.horasConsumidas,
+          totalPagar: detalle.totalPagar,
         }))
       } else if (tipo === 'pago') {
         const entry = entries.find((e) => e.codeEntradaSalida === pagoId)
@@ -120,8 +138,11 @@ export default function OperacionModals({
           entradaSalida: { codeEntradaSalida: pagoId },
         })
         if (entry) {
+          const detalle = detalleEstancia(entry, entry.fechaSalida)
           await api.put(`/entradaSalida/${pagoId}`, entradaPayload(entry, {
             estado: 'PAGADO',
+            horasConsumidas: detalle.horasConsumidas,
+            totalPagar: detalle.totalPagar,
           }))
         }
       }
@@ -144,6 +165,8 @@ export default function OperacionModals({
     }
     return list
   })()
+
+  const detallePago = entryActiva ? detalleEstancia(entryActiva, entryActiva.fechaSalida) : null
 
   return (
     <>
@@ -245,6 +268,12 @@ export default function OperacionModals({
       >
         <form onSubmit={(e) => { e.preventDefault(); ejecutar() }}>
           {error && <div className="alert alert-error">{error}</div>}
+          {entryActiva && (
+            <p className="form-hint">
+              Estancia: {detallePago.horasConsumidas} h · Total:{' '}
+              {detallePago.totalPagar != null ? `$${detallePago.totalPagar}` : '—'}
+            </p>
+          )}
           <div className="form-group">
             <label>Hora de salida</label>
             <input
@@ -273,6 +302,12 @@ export default function OperacionModals({
       >
         <form onSubmit={(e) => { e.preventDefault(); ejecutar() }}>
           {error && <div className="alert alert-error">{error}</div>}
+          {detallePago && (
+            <p className="form-hint">
+              Estancia: {detallePago.horasConsumidas} h · Total estimado:{' '}
+              {detallePago.totalPagar != null ? `$${detallePago.totalPagar}` : '—'}
+            </p>
+          )}
           <div className="form-row">
             <div className="form-group">
               <label>Monto</label>

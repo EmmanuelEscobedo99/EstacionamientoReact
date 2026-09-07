@@ -35,6 +35,16 @@
   gap: 0.5rem;
 }
 
+.form-hint {
+  margin: 0 0 1rem;
+  padding: 0.5rem 0.75rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.375rem;
+  color: #1e40af;
+  font-size: 0.85rem;
+}
+
 .form-checkbox input {
   width: auto;
 }
