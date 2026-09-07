@@ -11,6 +11,16 @@ const TIPO_LABELS = {
   DISCAPACITADO: 'Discapacitado',
 }
 
+const LIMITE_MIN = 120
+
+function tiempoRestante(formatoMin) {
+  const m = Math.round(formatoMin)
+  if (m < 0) return 'Vencido'
+  const h = Math.floor(m / 60)
+  const mm = String(m % 60).padStart(2, '0')
+  return h > 0 ? `${h}h ${mm}m` : `${mm}m`
+}
+
 export default function EstacionamientoView() {
   const [items, setItems] = useState([])
   const [spaces, setSpaces] = useState([])
@@ -23,6 +33,7 @@ export default function EstacionamientoView() {
   const [saving, setSaving] = useState(null)
   const [modal, setModal] = useState(null)
   const [ocupadoSpace, setOcupadoSpace] = useState(null)
+  const [now, setNow] = useState(Date.now())
 
   const load = async () => {
     setLoading(true)
@@ -49,6 +60,11 @@ export default function EstacionamientoView() {
 
   useEffect(() => {
     load()
+  }, [])
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(t)
   }, [])
 
   useEffect(() => {
@@ -166,31 +182,44 @@ export default function EstacionamientoView() {
                 <>
                   <p className="sv-hint">
                     Clic en un espacio libre para registrar la entrada de un vehículo;
-                    clic en uno ocupado para registrar su salida o pago.
+                    clic en uno ocupado para registrar su salida o pago. Cada estancia
+                    cuenta con 2 horas por defecto.
                   </p>
                   <div className="sv-grid">
-                    {espacios.map((s) => (
-                      <button
-                        key={s.codeEspacio}
-                        className={`sv-space ${s.disponible ? 'free' : 'occupied'} ${saving === s.codeEspacio ? 'saving' : ''}`}
-                        onClick={() => onClickEspacio(s)}
-                        disabled={saving === s.codeEspacio}
-                        title={s.disponible
-                          ? 'Libre — clic para registrar entrada'
-                          : 'Ocupado — clic para registrar salida o pago'}
-                      >
-                        <span className="sv-space-num">{s.numero}</span>
-                        <span className="sv-space-tipo">
-                          {TIPO_LABELS[s.tipo] || s.tipo}
-                        </span>
-                        <span className={`sv-switch ${s.disponible ? 'on' : 'off'}`}>
-                          <span className="sv-switch-knob" />
-                        </span>
-                        <span className="sv-space-state">
-                          {s.disponible ? 'Libre' : 'Ocupado'}
-                        </span>
-                      </button>
-                    ))}
+                    {espacios.map((s) => {
+                      const entry = s.disponible ? null : entryDeEspacio(s.codeEspacio)
+                      const restMin = entry
+                        ? LIMITE_MIN - (now - Date.parse(entry.fechaEntrada)) / 60000
+                        : null
+                      const vencido = restMin !== null && restMin < 0
+                      return (
+                        <button
+                          key={s.codeEspacio}
+                          className={`sv-space ${s.disponible ? 'free' : 'occupied'} ${saving === s.codeEspacio ? 'saving' : ''}`}
+                          onClick={() => onClickEspacio(s)}
+                          disabled={saving === s.codeEspacio}
+                          title={s.disponible
+                            ? 'Libre — clic para registrar entrada'
+                            : `Ocupado — queda ${restMin !== null ? tiempoRestante(restMin) : 'sin entrada'}`}
+                        >
+                          <span className="sv-space-num">{s.numero}</span>
+                          <span className="sv-space-tipo">
+                            {TIPO_LABELS[s.tipo] || s.tipo}
+                          </span>
+                          <span className={`sv-switch ${s.disponible ? 'on' : 'off'}`}>
+                            <span className="sv-switch-knob" />
+                          </span>
+                          <span className="sv-space-state">
+                            {s.disponible ? 'Libre' : 'Ocupado'}
+                          </span>
+                          {!s.disponible && entry && (
+                            <span className={`sv-space-time ${vencido ? 'over' : ''}`}>
+                              ⏱ {tiempoRestante(restMin)}
+                            </span>
+                          )}
+                        </button>
+                      )
+                    })}
                   </div>
                 </>
               )}

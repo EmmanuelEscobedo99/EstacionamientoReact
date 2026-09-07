@@ -209,3 +209,27 @@
   font-size: 12px;
   font-weight: 600;
 }
+
+.sv-space-time {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  padding: 2px 8px;
+  color: #fff;
+}
+
+.sv-space-time.over {
+  background: #fff;
+  color: #b91c1c;
+  font-weight: 700;
+  animation: sv-blink 1s step-start infinite;
+}
+
+@keyframes sv-blink {
+  50% {
+    opacity: 0.55;
+  }
+}
