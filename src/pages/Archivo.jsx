@@ -145,7 +145,7 @@ export default function Archivo() {
                         <td>{v.placas}</td>
                         <td>{v.marca || '—'}</td>
                         <td>{v.modelo || '—'}</td>
-                        <td>{v.usuario?.email || '—'}</td>
+                        <td>{v.usuario?.email || v.propietario || '—'}</td>
                         <td>
                           <button
                             className="btn btn-sm btn-edit"

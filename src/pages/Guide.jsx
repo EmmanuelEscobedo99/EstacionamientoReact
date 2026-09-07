@@ -26,7 +26,6 @@ export default function Guide() {
   const [lots, setLots] = useState([])
   const [spaces, setSpaces] = useState([])
   const [vehicles, setVehicles] = useState([])
-  const [usuarios, setUsuarios] = useState([])
   const [entries, setEntries] = useState([])
   const [payments, setPayments] = useState([])
   const [loading, setLoading] = useState(true)
@@ -38,23 +37,21 @@ export default function Guide() {
   const [limpiando, setLimpiando] = useState(false)
 
   const [vehForm, setVehForm] = useState({
-    placas: '', marca: '', modelo: '', color: '', tipo: 'AUTO', codeUsuario: '',
+    placas: '', marca: '', modelo: '', color: '', tipo: 'AUTO', propietario: '',
   })
 
   const load = useCallback(async () => {
     try {
-      const [l, s, v, u, e, p] = await Promise.all([
+      const [l, s, v, e, p] = await Promise.all([
         api.get('/estacionamiento'),
         api.get('/espacio'),
         api.get('/vehiculo'),
-        api.get('/usuarios'),
         api.get('/entradaSalida'),
         api.get('/pago'),
       ])
       setLots(l.data)
       setSpaces(s.data)
       setVehicles(v.data)
-      setUsuarios(u.data)
       setEntries(e.data)
       setPayments(p.data)
       setError('')
@@ -99,7 +96,7 @@ export default function Guide() {
   const openVehiculo = () => {
     setVehForm({
       placas: '', marca: '', modelo: '', color: '', tipo: 'AUTO',
-      codeUsuario: usuarios[0]?.codeUsuario || '',
+      propietario: '',
     })
     setModal('vehiculo')
   }
@@ -134,9 +131,7 @@ export default function Guide() {
         modelo: vehForm.modelo,
         color: vehForm.color,
         tipo: vehForm.tipo,
-        usuario: vehForm.codeUsuario
-          ? { codeUsuario: Number(vehForm.codeUsuario) }
-          : null,
+        propietario: vehForm.propietario,
       })
       setModal(null)
       load()
@@ -401,18 +396,13 @@ export default function Guide() {
             </div>
           </div>
           <div className="form-group">
-            <label>Cliente</label>
-            <select
-              name="codeUsuario"
-              value={vehForm.codeUsuario}
-              onChange={(e) => setVehForm({ ...vehForm, codeUsuario: e.target.value })}
-            >
-              {usuarios.map((u) => (
-                <option key={u.codeUsuario} value={u.codeUsuario}>
-                  {u.email} ({u.nombre} {u.apellido})
-                </option>
-              ))}
-            </select>
+            <label>Propietario</label>
+            <input
+              name="propietario"
+              value={vehForm.propietario}
+              onChange={(e) => setVehForm({ ...vehForm, propietario: e.target.value })}
+              placeholder="Ej. Juan Pérez"
+            />
           </div>
           <div className="form-actions">
             <button type="button" className="btn btn-secondary" onClick={() => setModal(null)}>

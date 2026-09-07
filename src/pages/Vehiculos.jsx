@@ -11,12 +11,11 @@ const emptyForm = {
   modelo: '',
   color: '',
   tipo: '',
-  codeUsuario: '',
+  propietario: '',
 }
 
 export default function Vehiculos() {
   const [items, setItems] = useState([])
-  const [usuarios, setUsuarios] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [form, setForm] = useState(emptyForm)
@@ -27,12 +26,8 @@ export default function Vehiculos() {
   const load = async () => {
     setLoading(true)
     try {
-      const [vehRes, usrRes] = await Promise.all([
-        api.get('/vehiculo'),
-        api.get('/usuarios'),
-      ])
-      setItems(vehRes.data)
-      setUsuarios(usrRes.data)
+      const { data } = await api.get('/vehiculo')
+      setItems(data)
     } catch {
       setError('No fue posible cargar los vehículos.')
     } finally {
@@ -50,7 +45,7 @@ export default function Vehiculos() {
 
   const openCreate = () => {
     setEditing(null)
-    setForm({ ...emptyForm, codeUsuario: usuarios[0]?.codeUsuario || '' })
+    setForm({ ...emptyForm })
     setShowModal(true)
   }
 
@@ -62,7 +57,7 @@ export default function Vehiculos() {
       modelo: item.modelo || '',
       color: item.color || '',
       tipo: item.tipo || '',
-      codeUsuario: item.usuario?.codeUsuario || '',
+      propietario: item.propietario || '',
     })
     setShowModal(true)
   }
@@ -77,9 +72,7 @@ export default function Vehiculos() {
         modelo: form.modelo,
         color: form.color,
         tipo: form.tipo,
-        usuario: form.codeUsuario
-          ? { codeUsuario: Number(form.codeUsuario) }
-          : null,
+        propietario: form.propietario,
       }
       if (editing) {
         await api.put(`/vehiculo/${editing.codeVehiculo}`, payload)
@@ -146,7 +139,7 @@ export default function Vehiculos() {
                   <td>{v.modelo || '—'}</td>
                   <td>{v.color || '—'}</td>
                   <td>{v.tipo || '—'}</td>
-                  <td>{v.usuario?.email || '—'}</td>
+                  <td>{v.propietario || '—'}</td>
                   <td>
                     <div className="actions">
                       <button
@@ -224,17 +217,12 @@ export default function Vehiculos() {
           </div>
           <div className="form-group">
             <label>Propietario</label>
-            <select
-              name="codeUsuario"
-              value={form.codeUsuario}
+            <input
+              name="propietario"
+              value={form.propietario}
               onChange={handleChange}
-            >
-              {usuarios.map((u) => (
-                <option key={u.codeUsuario} value={u.codeUsuario}>
-                  {u.email} ({u.nombre} {u.apellido})
-                </option>
-              ))}
-            </select>
+              placeholder="Ej. Juan Pérez"
+            />
           </div>
           <div className="form-actions">
             <button
