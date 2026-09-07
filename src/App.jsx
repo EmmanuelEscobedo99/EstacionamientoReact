@@ -5,7 +5,7 @@ import RoleRoute from './components/RoleRoute'
 import Layout from './components/Layout'
 import Login from './pages/Login'
 import Register from './pages/Register'
-import Dashboard from './pages/Dashboard'
+import Guide from './pages/Guide'
 import Usuarios from './pages/Usuarios'
 import Estacionamientos from './pages/Estacionamientos'
 import EstacionamientoView from './pages/EstacionamientoView'
@@ -16,7 +16,7 @@ import Pagos from './pages/Pagos'
 
 function HomeRedirect() {
   const { isAuthenticated } = useAuth()
-  return isAuthenticated ? <Dashboard /> : <Navigate to="/login" replace />
+  return isAuthenticated ? <Guide /> : <Navigate to="/login" replace />
 }
 
 function AppRoutes() {

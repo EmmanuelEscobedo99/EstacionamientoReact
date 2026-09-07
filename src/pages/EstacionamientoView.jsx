@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import api from '../api/axios'
+import Modal from '../components/Modal'
+import OperacionModals from '../components/OperacionModals'
 import './EstacionamientoView.css'
 
 const TIPO_LABELS = {
@@ -11,16 +13,33 @@ const TIPO_LABELS = {
 
 export default function EstacionamientoView() {
   const [items, setItems] = useState([])
+  const [spaces, setSpaces] = useState([])
+  const [vehicles, setVehicles] = useState([])
+  const [entries, setEntries] = useState([])
+  const [payments, setPayments] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selectedId, setSelectedId] = useState(null)
   const [saving, setSaving] = useState(null)
+  const [modal, setModal] = useState(null)
+  const [ocupadoSpace, setOcupadoSpace] = useState(null)
 
   const load = async () => {
     setLoading(true)
     try {
-      const { data } = await api.get('/estacionamiento')
-      setItems(data)
+      const [l, s, v, e, p] = await Promise.all([
+        api.get('/estacionamiento'),
+        api.get('/espacio'),
+        api.get('/vehiculo'),
+        api.get('/entradaSalida'),
+        api.get('/pago'),
+      ])
+      setItems(l.data)
+      setSpaces(s.data)
+      setVehicles(v.data)
+      setEntries(e.data)
+      setPayments(p.data)
+      setError('')
     } catch {
       setError('No fue posible cargar los estacionamientos.')
     } finally {
@@ -43,62 +62,42 @@ export default function EstacionamientoView() {
   const libres = espacios.filter((s) => s.disponible).length
   const ocupados = espacios.length - libres
 
-  const toggleEspacio = async (space) => {
-    const flip = !space.disponible
+  const activeEntries = entries.filter((e) => !e.fechaSalida)
+  const paidIds = new Set(payments.map((p) => p.entradaSalida?.codeEntradaSalida))
+  const esPagada = (entry) => paidIds.has(entry.codeEntradaSalida) || entry.estado === 'PAGADO'
+
+  const entryDeEspacio = (spaceId) =>
+    activeEntries.find((e) => e.espacio?.codeEspacio === spaceId)
+
+  const marcarLibre = async (space) => {
     setSaving(space.codeEspacio)
     setError('')
-
-    setItems((prev) =>
-      prev.map((lot) =>
-        lot.codeEstacionamiento === selectedId
-          ? {
-              ...lot,
-              espacios: lot.espacios.map((s) =>
-                s.codeEspacio === space.codeEspacio ? { ...s, disponible: flip } : s
-              ),
-            }
-          : lot
-      )
-    )
-
     try {
-      const { data } = await api.put(`/espacio/${space.codeEspacio}`, {
+      await api.put(`/espacio/${space.codeEspacio}`, {
         numero: space.numero,
         tipo: space.tipo,
-        disponible: flip,
+        disponible: true,
       })
-      setItems((prev) =>
-        prev.map((lot) =>
-          lot.codeEstacionamiento === selectedId
-            ? {
-                ...lot,
-                espacios: lot.espacios.map((s) =>
-                  s.codeEspacio === space.codeEspacio
-                    ? { ...s, disponible: data.disponible }
-                    : s
-                ),
-              }
-            : lot
-        )
-      )
+      setOcupadoSpace(null)
+      load()
     } catch {
-      setError(`No se pudo cambiar el estado del espacio ${space.numero}.`)
-      setItems((prev) =>
-        prev.map((lot) =>
-          lot.codeEstacionamiento === selectedId
-            ? {
-                ...lot,
-                espacios: lot.espacios.map((s) =>
-                  s.codeEspacio === space.codeEspacio ? { ...s, disponible: !flip } : s
-                ),
-              }
-            : lot
-        )
-      )
+      setError(`No se pudo liberar el espacio ${space.numero}.`)
     } finally {
       setSaving(null)
     }
   }
+
+  const onClickEspacio = (s) => {
+    if (s.disponible) {
+      setModal(`entrada:${selectedId}:${s.codeEspacio}`)
+      return
+    }
+    setOcupadoSpace(s)
+  }
+
+  const entryOcupado = ocupadoSpace
+    ? entryDeEspacio(ocupadoSpace.codeEspacio)
+    : null
 
   return (
     <div className="sv-page">
@@ -164,33 +163,113 @@ export default function EstacionamientoView() {
               {espacios.length === 0 ? (
                 <div className="empty-state">Este estacionamiento aún no tiene espacios.</div>
               ) : (
-                <div className="sv-grid">
-                  {espacios.map((s) => (
-                    <button
-                      key={s.codeEspacio}
-                      className={`sv-space ${s.disponible ? 'free' : 'occupied'} ${saving === s.codeEspacio ? 'saving' : ''}`}
-                      onClick={() => toggleEspacio(s)}
-                      disabled={saving === s.codeEspacio}
-                      title={s.disponible ? 'Libre — clic para marcar ocupado' : 'Ocupado — clic para marcar libre'}
-                    >
-                      <span className="sv-space-num">{s.numero}</span>
-                      <span className="sv-space-tipo">
-                        {TIPO_LABELS[s.tipo] || s.tipo}
-                      </span>
-                      <span className={`sv-switch ${s.disponible ? 'on' : 'off'}`}>
-                        <span className="sv-switch-knob" />
-                      </span>
-                      <span className="sv-space-state">
-                        {s.disponible ? 'Libre' : 'Ocupado'}
-                      </span>
-                    </button>
-                  ))}
-                </div>
+                <>
+                  <p className="sv-hint">
+                    Clic en un espacio libre para registrar la entrada de un vehículo;
+                    clic en uno ocupado para registrar su salida o pago.
+                  </p>
+                  <div className="sv-grid">
+                    {espacios.map((s) => (
+                      <button
+                        key={s.codeEspacio}
+                        className={`sv-space ${s.disponible ? 'free' : 'occupied'} ${saving === s.codeEspacio ? 'saving' : ''}`}
+                        onClick={() => onClickEspacio(s)}
+                        disabled={saving === s.codeEspacio}
+                        title={s.disponible
+                          ? 'Libre — clic para registrar entrada'
+                          : 'Ocupado — clic para registrar salida o pago'}
+                      >
+                        <span className="sv-space-num">{s.numero}</span>
+                        <span className="sv-space-tipo">
+                          {TIPO_LABELS[s.tipo] || s.tipo}
+                        </span>
+                        <span className={`sv-switch ${s.disponible ? 'on' : 'off'}`}>
+                          <span className="sv-switch-knob" />
+                        </span>
+                        <span className="sv-space-state">
+                          {s.disponible ? 'Libre' : 'Ocupado'}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
           )}
         </>
       )}
+
+      <OperacionModals
+        modal={modal}
+        setModal={setModal}
+        lots={items}
+        spaces={spaces}
+        vehicles={vehicles}
+        entries={entries}
+        onSaved={load}
+      />
+
+      <Modal
+        open={ocupadoSpace !== null}
+        title={ocupadoSpace ? `Espacio ${ocupadoSpace.numero} ocupado` : ''}
+        onClose={() => setOcupadoSpace(null)}
+      >
+        {entryOcupado ? (
+          <>
+            <p>
+              Ocupado por <strong>{entryOcupado.vehiculo?.placas || 'vehículo'}</strong>
+              {entryOcupado.vehiculo?.marca ? ` (${entryOcupado.vehiculo.marca})` : ''} desde{' '}
+              {new Date(entryOcupado.fechaEntrada).toLocaleString()}.
+            </p>
+            <div className="form-actions">
+              <button type="button" className="btn btn-secondary" onClick={() => setOcupadoSpace(null)}>
+                Cerrar
+              </button>
+              <button
+                type="button"
+                className="btn btn-edit"
+                onClick={() => {
+                  setOcupadoSpace(null)
+                  setModal(`salida:${entryOcupado.codeEntradaSalida}`)
+                }}
+              >
+                Registrar salida
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={esPagada(entryOcupado)}
+                onClick={() => {
+                  setOcupadoSpace(null)
+                  setModal(`pago:${entryOcupado.codeEntradaSalida}`)
+                }}
+              >
+                {esPagada(entryOcupado) ? 'Ya pagado' : 'Cobrar'}
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p>
+              Este espacio está marcado como ocupado pero no tiene una entrada
+              registrada. Puedes liberarlo manualmente.
+            </p>
+            <div className="form-actions">
+              <button type="button" className="btn btn-secondary" onClick={() => setOcupadoSpace(null)}>
+                Cerrar
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => marcarLibre(ocupadoSpace)}
+                disabled={saving === ocupadoSpace?.codeEspacio}
+              >
+                Marcar libre
+              </button>
+            </div>
+          </>
+        )}
+      </Modal>
     </div>
   )
 }

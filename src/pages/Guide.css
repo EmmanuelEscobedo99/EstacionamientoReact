@@ -1,0 +1,120 @@
+.guide {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.guide-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.guide-header h1 {
+  margin: 0 0 4px;
+  font-size: 1.5rem;
+}
+
+.guide-header span {
+  color: var(--text-secondary, #6b7280);
+  font-size: 0.9rem;
+}
+
+.guide-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.guide-stat {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.guide-stat strong {
+  font-size: 1.7rem;
+  line-height: 1.1;
+}
+
+.guide-stat span {
+  color: var(--text-secondary, #6b7280);
+  font-size: 0.85rem;
+}
+
+.guide-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.guide-hint-link {
+  font-size: 0.85rem;
+  color: var(--primary, #2563eb);
+}
+
+.guide-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.guide-section-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.guide-section-title h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.guide-section-title span {
+  color: var(--text-secondary, #6b7280);
+  font-size: 0.9rem;
+}
+
+.guide-timer {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.guide-ok {
+  color: var(--success, #16a34a);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.guide-over {
+  color: var(--danger, #dc2626);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.guide-note {
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--note-bg, #f8fafc);
+  border: 1px dashed var(--border, #e5e7eb);
+  color: var(--text-secondary, #6b7280);
+  font-size: 0.85rem;
+}
+
+.guide-empty {
+  max-width: 520px;
+  margin: 40px auto;
+  text-align: center;
+  border: 1px dashed var(--border, #e5e7eb);
+  border-radius: 12px;
+  padding: 32px 24px;
+}
+
+.guide-empty p {
+  color: var(--text-secondary, #6b7280);
+  margin: 8px 0 18px;
+}

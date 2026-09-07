@@ -66,6 +66,12 @@
   padding: 20px;
 }
 
+.sv-hint {
+  color: #6b7280;
+  font-size: 13px;
+  margin: 0 0 14px;
+}
+
 .sv-panel-head {
   display: flex;
   align-items: center;
