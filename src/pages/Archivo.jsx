@@ -15,6 +15,18 @@ const TABS = [
 
 const PAGE_SIZE = 3
 
+const PALETA = ['#2563eb', '#7c3aed', '#0891b2', '#059669', '#d97706', '#dc2626', '#db2777']
+const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+
+const money = (v) => '$' + Number(v ?? 0).toFixed(2)
+
+const etiquetaDia = (f) => {
+  const p = String(f).split('-')
+  return p.length === 3 ? `${p[2]}/${p[1]}` : String(f)
+}
+
+const etiquetaMes = (m) => `${MESES[(Number(m.mes) || 0) - 1] ?? m.mes} ${m.anio}`
+
 function formatDate(dt) {
   if (!dt) return '—'
   return new Date(dt).toLocaleString()
@@ -76,12 +88,26 @@ export default function Archivo() {
   const [confirm, setConfirm] = useState(null)
   const [search, setSearch] = useState({})
   const [page, setPage] = useState({})
+  const [pagoResumen, setPagoResumen] = useState(null)
+  const [porMetodo, setPorMetodo] = useState([])
+  const [porDia, setPorDia] = useState([])
+  const [porMes, setPorMes] = useState([])
 
   const load = async () => {
     setLoading(true)
     try {
-      const { data } = await api.get('/archivo')
-      setData(data)
+      const [arch, res, met, dia, mes] = await Promise.all([
+        api.get('/archivo'),
+        api.get('/pago/estadisticas'),
+        api.get('/pago/por-metodo'),
+        api.get('/pago/por-dia'),
+        api.get('/pago/por-mes'),
+      ])
+      setData(arch.data)
+      setPagoResumen(res.data)
+      setPorMetodo(met.data || [])
+      setPorDia(dia.data || [])
+      setPorMes(mes.data || [])
       setError('')
     } catch {
       setError('No fue posible cargar el archivo.')
@@ -394,6 +420,134 @@ export default function Archivo() {
               </div>
             ))}
           </div>
+
+          {pagoResumen && (
+            <div className="archivo-pagos">
+              <div className="archivo-section-title">
+                <h2>Estadísticas de ingresos</h2>
+                <span>Tendencia y desglose de la recaudación por pagos</span>
+              </div>
+
+              <div className="archivo-resumen">
+                <div className="archivo-resumen-card archivo-resumen-accent">
+                  <span>Total recaudado</span>
+                  <strong>{money(pagoResumen.totalRecaudado)}</strong>
+                </div>
+                <div className="archivo-resumen-card">
+                  <span>Total de pagos</span>
+                  <strong>{pagoResumen.totalPagos}</strong>
+                </div>
+                <div className="archivo-resumen-card">
+                  <span>Promedio por pago</span>
+                  <strong>{money(pagoResumen.promedioPago)}</strong>
+                </div>
+                <div className="archivo-resumen-card">
+                  <span>Pago más alto</span>
+                  <strong>{money(pagoResumen.pagoMayor)}</strong>
+                </div>
+                <div className="archivo-resumen-card">
+                  <span>Pago más bajo</span>
+                  <strong>{money(pagoResumen.pagoMenor)}</strong>
+                </div>
+              </div>
+
+              {pagoResumen.totalPagos > 0 && (
+                <div className="archivo-charts">
+                  <div className="archivo-chart">
+                    <div className="archivo-chart-head">
+                      <h3>Recaudación por método de pago</h3>
+                      <span>Total acumulado por forma de pago</span>
+                    </div>
+                    {porMetodo.length === 0 ? (
+                      <div className="empty-state">Sin datos por método.</div>
+                    ) : (
+                      <div className="archivo-bars-h">
+                        {porMetodo.map((m, i) => {
+                          const max = Math.max(...porMetodo.map((x) => x.totalRecaudado))
+                          const pct = max > 0 ? (m.totalRecaudado / max) * 100 : 0
+                          return (
+                            <div className="archivo-bar-h" key={m.metodoPago}>
+                              <div className="archivo-bar-h-label">{m.metodoPago}</div>
+                              <div className="archivo-bar-h-track">
+                                <div
+                                  className="archivo-bar-h-fill"
+                                  style={{ width: `${pct}%`, background: PALETA[i % PALETA.length] }}
+                                />
+                              </div>
+                              <div className="archivo-bar-h-count">
+                                <strong>{money(m.totalRecaudado)}</strong>
+                                <span>{m.cantidadPagos} pago(s)</span>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="archivo-chart">
+                    <div className="archivo-chart-head">
+                      <h3>Recaudación por mes</h3>
+                      <span>Total ingresado cada mes</span>
+                    </div>
+                    {porMes.length === 0 ? (
+                      <div className="empty-state">Sin datos por mes.</div>
+                    ) : (
+                      <div className="archivo-bars-v">
+                        {porMes.map((m) => {
+                          const max = Math.max(...porMes.map((x) => x.totalRecaudado))
+                          const pct = max > 0 ? (m.totalRecaudado / max) * 100 : 0
+                          return (
+                            <div
+                              className="archivo-bar-v"
+                              key={`${m.anio}${m.mes}`}
+                              title={`${etiquetaMes(m)} · ${money(m.totalRecaudado)} · ${m.pagos} pago(s)`}
+                            >
+                              <div className="archivo-bar-v-value">{money(m.totalRecaudado)}</div>
+                              <div className="archivo-bar-v-track">
+                                <div className="archivo-bar-v-fill" style={{ height: `${pct}%` }} />
+                              </div>
+                              <div className="archivo-bar-v-label">{etiquetaMes(m)}</div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="archivo-chart archivo-chart-full">
+                    <div className="archivo-chart-head">
+                      <h3>Recaudación por día</h3>
+                      <span>Total ingresado cada día (del más antiguo al más reciente)</span>
+                    </div>
+                    {porDia.length === 0 ? (
+                      <div className="empty-state">Sin datos por día.</div>
+                    ) : (
+                      <div className="archivo-bars-v archivo-bars-dia">
+                        {[...porDia].reverse().map((d) => {
+                          const max = Math.max(...porDia.map((x) => x.total))
+                          const pct = max > 0 ? (d.total / max) * 100 : 0
+                          return (
+                            <div
+                              className="archivo-bar-v"
+                              key={d.fecha}
+                              title={`${d.fecha} · ${money(d.total)} · ${d.pagos} pago(s)`}
+                            >
+                              <div className="archivo-bar-v-value">{money(d.total)}</div>
+                              <div className="archivo-bar-v-track">
+                                <div className="archivo-bar-v-fill" style={{ height: `${pct}%` }} />
+                              </div>
+                              <div className="archivo-bar-v-label">{etiquetaDia(d.fecha)}</div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="archivo-tabs">
             {TABS.map((t) => (
