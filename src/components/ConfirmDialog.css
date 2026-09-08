@@ -1,0 +1,48 @@
+.confirm-modal {
+  max-width: 420px;
+  text-align: center;
+  padding: 2rem 1.75rem 1.75rem;
+}
+
+.confirm-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+}
+
+.confirm-icon-danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.confirm-icon-info {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.confirm-title {
+  font-size: 1.15rem;
+  margin: 0 0 0.5rem;
+  color: var(--text);
+}
+
+.confirm-message {
+  color: var(--text-3);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  margin: 0 0 1.4rem;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.confirm-actions .btn {
+  min-width: 110px;
+}

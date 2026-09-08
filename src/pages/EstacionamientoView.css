@@ -1,0 +1,245 @@
+.sv-page {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.sv-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.sv-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+}
+
+.sv-header span {
+  color: var(--text-3);
+  font-size: 14px;
+}
+
+.sv-lots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.sv-lot-card {
+  flex: 1 1 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.sv-lot-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.sv-lot-card.selected {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.16);
+}
+
+.sv-lot-card span {
+  color: var(--text-3);
+  font-size: 13px;
+}
+
+.sv-lot-card small {
+  color: var(--text-2);
+  font-size: 12px;
+}
+
+.sv-panel {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  padding: 22px;
+  box-shadow: var(--shadow-sm);
+}
+
+.sv-hint {
+  color: var(--text-3);
+  font-size: 13px;
+  margin: 0 0 14px;
+}
+
+.sv-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.sv-panel-head h2 {
+  margin: 0;
+}
+
+.sv-panel-head > div > span {
+  color: var(--text-3);
+  font-size: 13px;
+}
+
+.sv-counters {
+  display: flex;
+  gap: 10px;
+}
+
+.sv-counter {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.sv-counter.free {
+  background: var(--success-soft);
+  color: #047857;
+}
+
+.sv-counter.occupied {
+  background: var(--danger-soft);
+  color: #b91c1c;
+}
+
+.sv-counter.total {
+  background: #eef2f7;
+  color: var(--text-2);
+}
+
+.sv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.sv-space {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 8px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  color: #fff;
+  font-family: inherit;
+  box-shadow: 0 6px 16px -8px rgba(0, 0, 0, 0.5);
+  transition: transform 0.12s, box-shadow 0.15s, opacity 0.15s;
+}
+
+.sv-space:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px -8px rgba(0, 0, 0, 0.5);
+}
+
+.sv-space:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.sv-space.free {
+  background: linear-gradient(135deg, #34d399, #10b981);
+}
+
+.sv-space.occupied {
+  background: linear-gradient(135deg, #f87171, #ef4444);
+}
+
+.sv-space-num {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.sv-space-tipo {
+  font-size: 11px;
+  opacity: 0.9;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sv-switch {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  background: #fff;
+  opacity: 0.95;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  transition: background 0.15s;
+}
+
+.sv-switch .sv-switch-knob {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s;
+}
+
+.sv-switch.on {
+  justify-content: flex-start;
+}
+
+.sv-switch.on .sv-switch-knob {
+  transform: translateX(0);
+}
+
+.sv-switch.off {
+  justify-content: flex-start;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.sv-switch.off .sv-switch-knob {
+  transform: translateX(18px);
+}
+
+.sv-space-state {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sv-space-time {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  padding: 2px 8px;
+  color: #fff;
+}
+
+.sv-space-time.over {
+  background: #fff;
+  color: #b91c1c;
+  font-weight: 700;
+  animation: sv-blink 1s step-start infinite;
+}
+
+@keyframes sv-blink {
+  50% {
+    opacity: 0.55;
+  }
+}

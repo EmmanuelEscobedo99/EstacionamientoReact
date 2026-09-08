@@ -5,17 +5,19 @@ import RoleRoute from './components/RoleRoute'
 import Layout from './components/Layout'
 import Login from './pages/Login'
 import Register from './pages/Register'
-import Dashboard from './pages/Dashboard'
+import Guide from './pages/Guide'
 import Usuarios from './pages/Usuarios'
 import Estacionamientos from './pages/Estacionamientos'
+import EstacionamientoView from './pages/EstacionamientoView'
 import Espacios from './pages/Espacios'
 import Vehiculos from './pages/Vehiculos'
 import EntradasSalidas from './pages/EntradasSalidas'
 import Pagos from './pages/Pagos'
+import Archivo from './pages/Archivo'
 
 function HomeRedirect() {
   const { isAuthenticated } = useAuth()
-  return isAuthenticated ? <Dashboard /> : <Navigate to="/login" replace />
+  return isAuthenticated ? <Guide /> : <Navigate to="/login" replace />
 }
 
 function AppRoutes() {
@@ -28,6 +30,14 @@ function AppRoutes() {
         <Route element={<Layout />}>
           <Route path="/" element={<HomeRedirect />} />
 
+          <Route
+            path="/estacionamiento"
+            element={
+              <RoleRoute roles={['ADMIN', 'EMPLEADO', 'CLIENTE']}>
+                <EstacionamientoView />
+              </RoleRoute>
+            }
+          />
           <Route
             path="/estacionamientos"
             element={
@@ -73,6 +83,14 @@ function AppRoutes() {
             element={
               <RoleRoute roles={['ADMIN']}>
                 <Usuarios />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/archivo"
+            element={
+              <RoleRoute roles={['ADMIN', 'EMPLEADO']}>
+                <Archivo />
               </RoleRoute>
             }
           />

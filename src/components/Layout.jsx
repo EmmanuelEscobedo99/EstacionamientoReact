@@ -1,5 +1,6 @@
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import Icon from './Icon'
 import './Layout.css'
 
 const ROL_LABELS = {
@@ -8,6 +9,18 @@ const ROL_LABELS = {
   CLIENTE: 'Cliente',
   USER: 'Usuario',
 }
+
+const NAV_ITEMS = [
+  { to: '/', label: 'Inicio', icon: 'home', end: true, roles: ['ADMIN', 'EMPLEADO', 'CLIENTE', 'USER'] },
+  { to: '/estacionamiento', label: 'Mapa', icon: 'map', roles: ['ADMIN', 'EMPLEADO', 'CLIENTE'] },
+  { to: '/estacionamientos', label: 'Estacionamientos', icon: 'building', roles: ['ADMIN', 'EMPLEADO', 'CLIENTE'] },
+  { to: '/espacios', label: 'Espacios', icon: 'grid', roles: ['ADMIN', 'EMPLEADO', 'CLIENTE'] },
+  { to: '/vehiculos', label: 'Vehículos', icon: 'car', roles: ['ADMIN', 'CLIENTE'] },
+  { to: '/entradas', label: 'Entradas / Salidas', icon: 'clock', roles: ['ADMIN', 'EMPLEADO', 'CLIENTE'] },
+  { to: '/pagos', label: 'Pagos', icon: 'card', roles: ['ADMIN', 'CLIENTE'] },
+  { to: '/usuarios', label: 'Usuarios', icon: 'users', roles: ['ADMIN'] },
+  { to: '/archivo', label: 'Archivo', icon: 'archive', roles: ['ADMIN', 'EMPLEADO'] },
+]
 
 export default function Layout() {
   const { user, logout } = useAuth()
@@ -21,60 +34,57 @@ export default function Layout() {
   const navLinkClass = ({ isActive }) =>
     isActive ? 'nav-link active' : 'nav-link'
 
+  const items = NAV_ITEMS.filter((i) => i.roles.includes(user.rol))
+  const initials = String(user.email || 'U')[0].toUpperCase()
+
   return (
-    <div className="layout">
-      <nav className="navbar">
-        <div className="navbar-brand">
-          <Link to="/">🅿️ Estacionamiento</Link>
+    <div className="app-shell">
+      <aside className="sidebar">
+        <div className="sidebar-brand">
+          <div className="brand-mark">
+            <Icon name="car" size={22} />
+          </div>
+          <div className="brand-text">
+            <strong>Estacionamiento</strong>
+            <span>Sistema de gestión</span>
+          </div>
         </div>
-        <div className="navbar-links">
-          <NavLink to="/" className={navLinkClass} end>
-            Inicio
-          </NavLink>
-          {(user.rol === 'ADMIN' || user.rol === 'EMPLEADO' || user.rol === 'CLIENTE') && (
-            <NavLink to="/estacionamientos" className={navLinkClass}>
-              Estacionamientos
+
+        <nav className="sidebar-nav">
+          <p className="sidebar-section">Menú</p>
+          {items.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={navLinkClass}
+            >
+              <Icon name={item.icon} size={18} />
+              <span>{item.label}</span>
             </NavLink>
-          )}
-          {(user.rol === 'ADMIN' || user.rol === 'EMPLEADO' || user.rol === 'CLIENTE') && (
-            <NavLink to="/espacios" className={navLinkClass}>
-              Espacios
-            </NavLink>
-          )}
-          {(user.rol === 'ADMIN' || user.rol === 'CLIENTE') && (
-            <NavLink to="/vehiculos" className={navLinkClass}>
-              Vehículos
-            </NavLink>
-          )}
-          {(user.rol === 'ADMIN' || user.rol === 'EMPLEADO' || user.rol === 'CLIENTE') && (
-            <NavLink to="/entradas" className={navLinkClass}>
-              Entradas/Salidas
-            </NavLink>
-          )}
-          {(user.rol === 'ADMIN' || user.rol === 'CLIENTE') && (
-            <NavLink to="/pagos" className={navLinkClass}>
-              Pagos
-            </NavLink>
-          )}
-          {user.rol === 'ADMIN' && (
-            <NavLink to="/usuarios" className={navLinkClass}>
-              Usuarios
-            </NavLink>
-          )}
-        </div>
-        <div className="navbar-user">
-          <span className="user-name">
-            {user.email}
-            <span className="user-rol">{ROL_LABELS[user.rol] || user.rol}</span>
-          </span>
-          <button className="logout-btn" onClick={handleLogout}>
-            Salir
+          ))}
+        </nav>
+
+        <div className="sidebar-footer">
+          <div className="sidebar-user">
+            <div className="sidebar-avatar">{initials}</div>
+            <div className="sidebar-user-info">
+              <strong>{user.email}</strong>
+              <span>{ROL_LABELS[user.rol] || user.rol}</span>
+            </div>
+          </div>
+          <button className="sidebar-logout" onClick={handleLogout}>
+            <Icon name="logout" size={17} />
+            <span>Salir</span>
           </button>
         </div>
-      </nav>
-      <main className="main-content">
-        <Outlet />
-      </main>
+      </aside>
+
+      <div className="app-main">
+        <main className="main-content">
+          <Outlet />
+        </main>
+      </div>
     </div>
   )
 }

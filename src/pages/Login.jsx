@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import Icon from '../components/Icon'
 import './Auth.css'
 
 export default function Login() {
@@ -36,6 +37,15 @@ export default function Login() {
   return (
     <div className="auth-page">
       <div className="auth-card">
+        <div className="auth-brand">
+          <div className="brand-mark">
+            <Icon name="car" size={24} />
+          </div>
+          <div className="auth-brand-text">
+            <strong>Estacionamiento</strong>
+            <span>Sistema de gestión</span>
+          </div>
+        </div>
         <h1>Iniciar sesión</h1>
         <p>Gestión de Estacionamiento</p>
         {error && <div className="alert alert-error">{error}</div>}

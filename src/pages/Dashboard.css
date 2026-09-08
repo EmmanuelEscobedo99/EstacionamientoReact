@@ -1,9 +1,10 @@
 .dashboard h1 {
   margin-bottom: 0.25rem;
+  letter-spacing: -0.02em;
 }
 
 .dashboard-subtitle {
-  color: #6b7280;
+  color: var(--text-3);
   margin-top: 0;
 }
 
@@ -15,31 +16,32 @@
 }
 
 .stat-card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
 }
 
 .stat-value {
   font-size: 2rem;
-  font-weight: bold;
-  color: #2563eb;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--primary);
 }
 
 .stat-label {
-  color: #6b7280;
+  color: var(--text-3);
   font-size: 0.85rem;
   margin-top: 0.25rem;
 }
 
 .dashboard-info {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
   padding: 1.5rem;
 }
 
@@ -49,6 +51,6 @@
 }
 
 .dashboard-info p {
-  color: #4b5563;
+  color: var(--text-2);
   margin: 0;
 }

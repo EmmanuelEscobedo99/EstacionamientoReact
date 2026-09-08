@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import api from '../api/axios'
 import Modal from '../components/Modal'
+import ConfirmDialog from '../components/ConfirmDialog'
 import '../components/CrudPage.css'
 import '../components/forms.css'
 
@@ -13,6 +14,7 @@ const emptyForm = {
   totalPagar: '',
   estado: 'ACTIVO',
   codeVehiculo: '',
+  codeEstacionamiento: '',
   codeEspacio: '',
 }
 
@@ -35,23 +37,27 @@ export default function EntradasSalidas() {
   const [items, setItems] = useState([])
   const [vehiculos, setVehiculos] = useState([])
   const [espacios, setEspacios] = useState([])
+  const [estacionamientos, setEstacionamientos] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [form, setForm] = useState(emptyForm)
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState(null)
+  const [confirmId, setConfirmId] = useState(null)
 
   const load = async () => {
     setLoading(true)
     try {
-      const [entRes, vehRes, espRes] = await Promise.all([
+      const [entRes, vehRes, espRes, estRes] = await Promise.all([
         api.get('/entradaSalida'),
         api.get('/vehiculo'),
         api.get('/espacio'),
+        api.get('/estacionamiento'),
       ])
       setItems(entRes.data)
       setVehiculos(vehRes.data)
       setEspacios(espRes.data)
+      setEstacionamientos(estRes.data)
     } catch {
       setError('No fue posible cargar las entradas/salidas.')
     } finally {
@@ -64,15 +70,32 @@ export default function EntradasSalidas() {
   }, [])
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
+    const { name, value } = e.target
+    if (name === 'codeEstacionamiento') {
+      const first = espacios.find(
+        (s) => s.estacionamiento?.codeEstacionamiento === Number(value)
+      )
+      setForm({
+        ...form,
+        codeEstacionamiento: value,
+        codeEspacio: first?.codeEspacio || '',
+      })
+      return
+    }
+    setForm({ ...form, [name]: value })
   }
 
   const openCreate = () => {
     setEditing(null)
+    const lot = estacionamientos[0]?.codeEstacionamiento || ''
+    const first = espacios.find(
+      (s) => s.estacionamiento?.codeEstacionamiento === Number(lot)
+    )
     setForm({
       ...emptyForm,
       codeVehiculo: vehiculos[0]?.codeVehiculo || '',
-      codeEspacio: espacios[0]?.codeEspacio || '',
+      codeEstacionamiento: lot,
+      codeEspacio: first?.codeEspacio || '',
     })
     setShowModal(true)
   }
@@ -86,6 +109,8 @@ export default function EntradasSalidas() {
       totalPagar: item.totalPagar ?? '',
       estado: item.estado || 'ACTIVO',
       codeVehiculo: item.vehiculo?.codeVehiculo || '',
+      codeEstacionamiento:
+        item.espacio?.estacionamiento?.codeEstacionamiento || '',
       codeEspacio: item.espacio?.codeEspacio || '',
     })
     setShowModal(true)
@@ -122,15 +147,25 @@ export default function EntradasSalidas() {
     }
   }
 
-  const handleDelete = async (id) => {
-    if (!confirm('¿Seguro que deseas eliminar este registro?')) return
+  const handleDelete = async () => {
+    if (!confirmId) return
     try {
-      await api.delete(`/entradaSalida/${id}`)
+      await api.delete(`/entradaSalida/${confirmId}`)
+      setConfirmId(null)
       load()
     } catch {
-      setError('No fue posible eliminar el registro.')
+      setError('No fue posible ocultar el registro.')
     }
   }
+
+  const espaciosVisibles =
+    form.codeEstacionamiento === '' || !estacionamientos.length
+      ? espacios
+      : espacios.filter(
+        (e) =>
+          e.estacionamiento?.codeEstacionamiento ===
+          Number(form.codeEstacionamiento)
+      )
 
   return (
     <div className="page">
@@ -176,6 +211,7 @@ export default function EntradasSalidas() {
                   <td>{e.totalPagar != null ? `$${e.totalPagar}` : '—'}</td>
                   <td>{estadoBadge(e.estado)}</td>
                   <td>{e.vehiculo?.placas || '—'}</td>
+
                   <td>{e.espacio?.numero || '—'}</td>
                   <td>
                     <div className="actions">
@@ -187,9 +223,9 @@ export default function EntradasSalidas() {
                       </button>
                       <button
                         className="btn btn-sm btn-danger"
-                        onClick={() => handleDelete(e.codeEntradaSalida)}
+                        onClick={() => setConfirmId(e.codeEntradaSalida)}
                       >
-                        Eliminar
+                        Ocultar
                       </button>
                     </div>
                   </td>
@@ -256,17 +292,31 @@ export default function EntradasSalidas() {
               ))}
             </select>
           </div>
+          <div className="form-group">
+            <label>Vehículo</label>
+            <select
+              name="codeVehiculo"
+              value={form.codeVehiculo}
+              onChange={handleChange}
+            >
+              {vehiculos.map((v) => (
+                <option key={v.codeVehiculo} value={v.codeVehiculo}>
+                  {v.placas} ({v.marca} {v.modelo})
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="form-row">
             <div className="form-group">
-              <label>Vehículo</label>
+              <label>Estacionamiento</label>
               <select
-                name="codeVehiculo"
-                value={form.codeVehiculo}
+                name="codeEstacionamiento"
+                value={form.codeEstacionamiento}
                 onChange={handleChange}
               >
-                {vehiculos.map((v) => (
-                  <option key={v.codeVehiculo} value={v.codeVehiculo}>
-                    {v.placas} ({v.marca} {v.modelo})
+                {estacionamientos.map((e) => (
+                  <option key={e.codeEstacionamiento} value={e.codeEstacionamiento}>
+                    {e.nombre}
                   </option>
                 ))}
               </select>
@@ -278,9 +328,9 @@ export default function EntradasSalidas() {
                 value={form.codeEspacio}
                 onChange={handleChange}
               >
-                {espacios.map((e) => (
+                {espaciosVisibles.map((e) => (
                   <option key={e.codeEspacio} value={e.codeEspacio}>
-                    {e.numero} ({e.tipo})
+                    {e.numero} ({e.tipo}) · {e.estacionamiento?.nombre || '—'}
                   </option>
                 ))}
               </select>
@@ -300,6 +350,16 @@ export default function EntradasSalidas() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        open={confirmId !== null}
+        title="Ocultar registro"
+        message="La entrada/salida se quitará de la interfaz, pero sus datos se conservarán en el Archivo para tus estadísticas. ¿Deseas continuar?"
+        confirmLabel="Ocultar"
+        tone="danger"
+        onCancel={() => setConfirmId(null)}
+        onConfirm={handleDelete}
+      />
     </div>
   )
 }

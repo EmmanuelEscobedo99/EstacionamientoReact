@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import api from '../api/axios'
 import Modal from '../components/Modal'
+import ConfirmDialog from '../components/ConfirmDialog'
 import '../components/CrudPage.css'
 import '../components/forms.css'
 
@@ -31,6 +32,7 @@ export default function Espacios() {
   const [form, setForm] = useState(emptyForm)
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState(null)
+  const [confirmId, setConfirmId] = useState(null)
 
   const load = async () => {
     setLoading(true)
@@ -104,13 +106,14 @@ export default function Espacios() {
     }
   }
 
-  const handleDelete = async (id) => {
-    if (!confirm('¿Seguro que deseas eliminar este espacio?')) return
+  const handleDelete = async () => {
+    if (!confirmId) return
     try {
-      await api.delete(`/espacio/${id}`)
+      await api.delete(`/espacio/${confirmId}`)
+      setConfirmId(null)
       load()
     } catch {
-      setError('No fue posible eliminar el espacio.')
+      setError('No fue posible ocultar el espacio.')
     }
   }
 
@@ -169,9 +172,9 @@ export default function Espacios() {
                       </button>
                       <button
                         className="btn btn-sm btn-danger"
-                        onClick={() => handleDelete(e.codeEspacio)}
+                        onClick={() => setConfirmId(e.codeEspacio)}
                       >
-                        Eliminar
+                        Ocultar
                       </button>
                     </div>
                   </td>
@@ -246,6 +249,16 @@ export default function Espacios() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        open={confirmId !== null}
+        title="Ocultar espacio"
+        message="El espacio se quitará de la interfaz, pero sus datos se conservarán en el Archivo para tus estadísticas. ¿Deseas continuar?"
+        confirmLabel="Ocultar"
+        tone="danger"
+        onCancel={() => setConfirmId(null)}
+        onConfirm={handleDelete}
+      />
     </div>
   )
 }
