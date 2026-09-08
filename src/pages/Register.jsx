@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import Icon from '../components/Icon'
 import './Auth.css'
 
 const ROLES = ['CLIENTE', 'EMPLEADO', 'ADMIN', 'USER']
@@ -49,6 +50,15 @@ export default function Register() {
   return (
     <div className="auth-page">
       <div className="auth-card wide">
+        <div className="auth-brand">
+          <div className="brand-mark">
+            <Icon name="car" size={24} />
+          </div>
+          <div className="auth-brand-text">
+            <strong>Estacionamiento</strong>
+            <span>Sistema de gestión</span>
+          </div>
+        </div>
         <h1>Crear cuenta</h1>
         <p>Registro de usuario</p>
         {error && <div className="alert alert-error">{error}</div>}
