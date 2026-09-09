@@ -90,6 +90,26 @@ const PATHS = {
       <path d="m19 15 .7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z" />
     </>
   ),
+  bell: (
+    <>
+      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+    </>
+  ),
+  wallet: (
+    <>
+      <path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+      <path d="M21 12a1.5 1.5 0 0 0-1.5-1.5h-5a1.5 1.5 0 0 0 0 3h5A1.5 1.5 0 0 0 21 12z" />
+    </>
+  ),
+  qr: (
+    <>
+      <rect x="3" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="3" width="7" height="7" rx="1" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
+      <path d="M14 14h3v3h-3zM21 14h0M14 21h0M21 21h3v-3h-3" />
+    </>
+  ),
 }
 
 export default function Icon({ name, size = 18, className = '' }) {

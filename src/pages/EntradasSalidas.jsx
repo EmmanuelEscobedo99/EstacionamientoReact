@@ -2,9 +2,12 @@ import { useEffect, useState } from 'react'
 import api from '../api/axios'
 import Modal from '../components/Modal'
 import ConfirmDialog from '../components/ConfirmDialog'
+import { useAuth } from '../context/AuthContext'
+import { SearchInput, Pagination } from '../components/ListTools'
 import '../components/CrudPage.css'
 import '../components/forms.css'
 
+const PAGE_SIZE = 5
 const ESTADOS = ['ACTIVO', 'PAGADO', 'FINALIZADO', 'CANCELADO']
 
 const emptyForm = {
@@ -34,6 +37,9 @@ function formatDate(dt) {
 }
 
 export default function EntradasSalidas() {
+  const { user } = useAuth()
+  const editable = user.rol !== 'CLIENTE'
+
   const [items, setItems] = useState([])
   const [vehiculos, setVehiculos] = useState([])
   const [espacios, setEspacios] = useState([])
@@ -44,6 +50,8 @@ export default function EntradasSalidas() {
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState(null)
   const [confirmId, setConfirmId] = useState(null)
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
 
   const load = async () => {
     setLoading(true)
@@ -158,6 +166,32 @@ export default function EntradasSalidas() {
     }
   }
 
+  const entradaBuscar = (e) => [
+    e.codeEntradaSalida,
+    e.fechaEntrada,
+    e.fechaSalida,
+    e.horasConsumidas,
+    e.totalPagar,
+    e.estado,
+    e.vehiculo?.codeVehiculo,
+    e.vehiculo?.placas,
+    e.vehiculo?.marca,
+    e.vehiculo?.modelo,
+    e.espacio?.numero,
+    e.espacio?.estacionamiento?.nombre,
+    e.qrCode,
+  ]
+
+  const q = search.trim().toLowerCase()
+  const filtered = q
+    ? items.filter((e) =>
+        entradaBuscar(e).some((f) => String(f ?? '').toLowerCase().includes(q)),
+      )
+    : items
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const cur = Math.min(page, totalPages)
+  const shown = filtered.slice((cur - 1) * PAGE_SIZE, cur * PAGE_SIZE)
+
   const espaciosVisibles =
     form.codeEstacionamiento === '' || !estacionamientos.length
       ? espacios
@@ -174,35 +208,54 @@ export default function EntradasSalidas() {
           <h1>Entradas / Salidas</h1>
           <span>Registro de movimientos de vehículos</span>
         </div>
-        <button className="btn btn-primary" onClick={openCreate}>
-          + Nueva Entrada
-        </button>
+        {editable && (
+          <button className="btn btn-primary" onClick={openCreate}>
+            + Nueva Entrada
+          </button>
+        )}
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
 
       <div className="table-card">
+        <div className="lt-toolbar">
+          <SearchInput
+            value={search}
+            onChange={(value) => {
+              setSearch(value)
+              setPage(1)
+            }}
+          />
+          <span className="lt-results">
+            {filtered.length} de {items.length}
+          </span>
+        </div>
         {loading ? (
           <div className="loading">Cargando...</div>
-        ) : items.length === 0 ? (
-          <div className="empty-state">No hay registros de entrada/salida.</div>
+        ) : filtered.length === 0 ? (
+          <div className="empty-state">
+            {search
+              ? 'Sin resultados para tu búsqueda.'
+              : 'No hay registros de entrada/salida.'}
+          </div>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Entrada</th>
-                <th>Salida</th>
-                <th>Horas</th>
-                <th>Total</th>
-                <th>Estado</th>
-                <th>Vehículo</th>
-                <th>Espacio</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((e) => (
+          <>
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Entrada</th>
+                  <th>Salida</th>
+                  <th>Horas</th>
+                  <th>Total</th>
+                  <th>Estado</th>
+                  <th>Vehículo</th>
+                  <th>Espacio</th>
+                  {editable && <th>Acciones</th>}
+                </tr>
+              </thead>
+              <tbody>
+              {shown.map((e) => (
                 <tr key={e.codeEntradaSalida}>
                   <td>{e.codeEntradaSalida}</td>
                   <td>{formatDate(e.fechaEntrada)}</td>
@@ -213,26 +266,30 @@ export default function EntradasSalidas() {
                   <td>{e.vehiculo?.placas || '—'}</td>
 
                   <td>{e.espacio?.numero || '—'}</td>
-                  <td>
-                    <div className="actions">
-                      <button
-                        className="btn btn-sm btn-edit"
-                        onClick={() => openEdit(e)}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        className="btn btn-sm btn-danger"
-                        onClick={() => setConfirmId(e.codeEntradaSalida)}
-                      >
-                        Ocultar
-                      </button>
-                    </div>
-                  </td>
+                  {editable && (
+                    <td>
+                      <div className="actions">
+                        <button
+                          className="btn btn-sm btn-edit"
+                          onClick={() => openEdit(e)}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          className="btn btn-sm btn-danger"
+                          onClick={() => setConfirmId(e.codeEntradaSalida)}
+                        >
+                          Ocultar
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+            <Pagination page={cur} totalPages={totalPages} onChange={setPage} />
+          </>
         )}
       </div>
 

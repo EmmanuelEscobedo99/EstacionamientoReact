@@ -1,0 +1,83 @@
+.salidaqr {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.salidaqr-header h1 {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.salidaqr-header span {
+  color: var(--text-3);
+  font-size: 14px;
+}
+
+.salidaqr-buscar {
+  display: flex;
+  gap: 8px;
+  max-width: 560px;
+}
+
+.salidaqr-buscar input {
+  flex: 1;
+  min-width: 0;
+}
+
+.salidaqr-result {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  max-width: 680px;
+}
+
+.salidaqr-info {
+  flex: 1;
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.salidaqr-info p {
+  font-size: 14px;
+  color: var(--text-2);
+}
+
+.salidaqr-pago {
+  flex: 1;
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.salidaqr-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.salidaqr-warn {
+  font-size: 12.5px;
+  color: var(--danger);
+}
+
+.alert-success {
+  background: var(--success-soft);
+  color: #065f46;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+@media (max-width: 640px) {
+  .salidaqr-buscar,
+  .salidaqr-actions {
+    flex-direction: column;
+  }
+}

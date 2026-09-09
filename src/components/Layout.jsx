@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Icon from './Icon'
+import NotificationBell from './NotificationBell'
 import './Layout.css'
 
 const ROL_LABELS = {
@@ -11,13 +12,15 @@ const ROL_LABELS = {
 }
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Inicio', icon: 'home', end: true, roles: ['ADMIN', 'EMPLEADO', 'CLIENTE', 'USER'] },
+  { to: '/', label: 'Inicio', icon: 'home', end: true, roles: ['ADMIN', 'EMPLEADO', 'USER'] },
   { to: '/estacionamiento', label: 'Mapa', icon: 'map', roles: ['ADMIN', 'EMPLEADO', 'CLIENTE'] },
-  { to: '/estacionamientos', label: 'Estacionamientos', icon: 'building', roles: ['ADMIN', 'EMPLEADO', 'CLIENTE'] },
-  { to: '/espacios', label: 'Espacios', icon: 'grid', roles: ['ADMIN', 'EMPLEADO', 'CLIENTE'] },
+  { to: '/estacionamientos', label: 'Estacionamientos', icon: 'building', roles: ['ADMIN', 'EMPLEADO'] },
+  { to: '/espacios', label: 'Espacios', icon: 'grid', roles: ['ADMIN', 'EMPLEADO'] },
   { to: '/vehiculos', label: 'Vehículos', icon: 'car', roles: ['ADMIN', 'CLIENTE'] },
   { to: '/entradas', label: 'Entradas / Salidas', icon: 'clock', roles: ['ADMIN', 'EMPLEADO', 'CLIENTE'] },
   { to: '/pagos', label: 'Pagos', icon: 'card', roles: ['ADMIN', 'CLIENTE'] },
+  { to: '/salida-qr', label: 'Cobrar por QR', icon: 'qr', roles: ['ADMIN', 'EMPLEADO'] },
+  { to: '/mi-cuenta', label: 'Mi cuenta', icon: 'wallet', roles: ['ADMIN', 'CLIENTE'] },
   { to: '/usuarios', label: 'Usuarios', icon: 'users', roles: ['ADMIN'] },
   { to: '/archivo', label: 'Archivo', icon: 'archive', roles: ['ADMIN', 'EMPLEADO'] },
 ]
@@ -64,6 +67,8 @@ export default function Layout() {
             </NavLink>
           ))}
         </nav>
+
+        {(user.rol === 'EMPLEADO' || user.rol === 'ADMIN') && <NotificationBell />}
 
         <div className="sidebar-footer">
           <div className="sidebar-user">
