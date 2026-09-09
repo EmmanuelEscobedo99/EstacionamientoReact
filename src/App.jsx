@@ -14,10 +14,13 @@ import Vehiculos from './pages/Vehiculos'
 import EntradasSalidas from './pages/EntradasSalidas'
 import Pagos from './pages/Pagos'
 import Archivo from './pages/Archivo'
+import MiCuenta from './pages/MiCuenta'
+import SalidaQr from './pages/SalidaQr'
 
 function HomeRedirect() {
-  const { isAuthenticated } = useAuth()
-  return isAuthenticated ? <Guide /> : <Navigate to="/login" replace />
+  const { isAuthenticated, user } = useAuth()
+  if (!isAuthenticated) return <Navigate to="/login" replace />
+  return user.rol === 'CLIENTE' ? <Navigate to="/estacionamiento" replace /> : <Guide />
 }
 
 function AppRoutes() {
@@ -41,7 +44,7 @@ function AppRoutes() {
           <Route
             path="/estacionamientos"
             element={
-              <RoleRoute roles={['ADMIN', 'EMPLEADO', 'CLIENTE']}>
+              <RoleRoute roles={['ADMIN', 'EMPLEADO']}>
                 <Estacionamientos />
               </RoleRoute>
             }
@@ -49,7 +52,7 @@ function AppRoutes() {
           <Route
             path="/espacios"
             element={
-              <RoleRoute roles={['ADMIN', 'EMPLEADO', 'CLIENTE']}>
+              <RoleRoute roles={['ADMIN', 'EMPLEADO']}>
                 <Espacios />
               </RoleRoute>
             }
@@ -91,6 +94,22 @@ function AppRoutes() {
             element={
               <RoleRoute roles={['ADMIN', 'EMPLEADO']}>
                 <Archivo />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/mi-cuenta"
+            element={
+              <RoleRoute roles={['ADMIN', 'CLIENTE']}>
+                <MiCuenta />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/salida-qr"
+            element={
+              <RoleRoute roles={['ADMIN', 'EMPLEADO']}>
+                <SalidaQr />
               </RoleRoute>
             }
           />

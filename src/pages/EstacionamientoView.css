@@ -120,9 +120,19 @@
   color: #b91c1c;
 }
 
+.sv-counter.reserved {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
 .sv-counter.total {
   background: #eef2f7;
   color: var(--text-2);
+}
+
+.sv-counter.mine {
+  background: #ccfbf1;
+  color: #0f766e;
 }
 
 .sv-grid {
@@ -162,6 +172,19 @@
 
 .sv-space.occupied {
   background: linear-gradient(135deg, #f87171, #ef4444);
+}
+
+.sv-space.reserved {
+  background: linear-gradient(135deg, #818cf8, #6366f1);
+}
+
+.sv-space.mine {
+  background: linear-gradient(135deg, #2dd4bf, #0d9488);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.35), 0 6px 16px -8px rgba(0, 0, 0, 0.5);
+}
+
+.sv-space.mine:hover {
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.45), 0 10px 22px -8px rgba(0, 0, 0, 0.5);
 }
 
 .sv-space-num {

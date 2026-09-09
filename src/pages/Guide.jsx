@@ -28,6 +28,7 @@ export default function Guide() {
   const [vehicles, setVehicles] = useState([])
   const [entries, setEntries] = useState([])
   const [payments, setPayments] = useState([])
+  const [reservas, setReservas] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [now, setNow] = useState(Date.now())
@@ -42,18 +43,20 @@ export default function Guide() {
 
   const load = useCallback(async () => {
     try {
-      const [l, s, v, e, p] = await Promise.all([
+      const [l, s, v, e, p, r] = await Promise.all([
         api.get('/estacionamiento'),
         api.get('/espacio'),
         api.get('/vehiculo'),
         api.get('/entradaSalida'),
         api.get('/pago'),
+        api.get('/reserva'),
       ])
       setLots(l.data)
       setSpaces(s.data)
       setVehicles(v.data)
       setEntries(e.data)
       setPayments(p.data)
+      setReservas(r.data)
       setError('')
     } catch {
       setError('No fue posible cargar la información del sistema.')
@@ -73,7 +76,12 @@ export default function Guide() {
 
   const activeEntries = entries.filter((e) => !e.fechaSalida)
   const closedEntries = entries.filter((e) => e.fechaSalida)
-  const freeSpaces = spaces.filter((s) => s.disponible)
+  const reservadaDe = (spaceId) =>
+    reservas.some(
+      (rx) => rx.estado === 'ACTIVA' && rx.espacio?.codeEspacio === spaceId
+    )
+  const freeSpaces = spaces.filter((s) => s.disponible && !reservadaDe(s.codeEspacio))
+  const espaciosReservados = spaces.filter((s) => reservadaDe(s.codeEspacio)).length
   const paidIds = new Set(payments.map((p) => p.entradaSalida?.codeEntradaSalida))
 
   const esPagada = (entry) => paidIds.has(entry.codeEntradaSalida) || entry.estado === 'PAGADO'
@@ -194,6 +202,10 @@ export default function Guide() {
         <div className="guide-stat">
           <strong>{freeSpaces.length}/{spaces.length}</strong>
           <span>Espacios libres</span>
+        </div>
+        <div className="guide-stat">
+          <strong>{espaciosReservados}</strong>
+          <span>Espacios reservados</span>
         </div>
         <div className="guide-stat">
           <strong>{activeEntries.filter((e) => !esPagada(e)).length}</strong>
@@ -339,7 +351,7 @@ export default function Guide() {
         modal={modal}
         setModal={setModal}
         lots={lots}
-        spaces={spaces}
+        spaces={freeSpaces}
         vehicles={vehicles}
         entries={entries}
         onSaved={load}
