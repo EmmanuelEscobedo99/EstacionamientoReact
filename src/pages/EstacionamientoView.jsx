@@ -34,6 +34,7 @@ export default function EstacionamientoView() {
   const [reservas, setReservas] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [selectedId, setSelectedId] = useState(null)
   const [saving, setSaving] = useState(null)
   const [modal, setModal] = useState(null)
@@ -43,12 +44,6 @@ export default function EstacionamientoView() {
   const [reservaForm, setReservaForm] = useState(null)
   const [ocuparSel, setOcuparSel] = useState(null)
   const [pagoMetodo, setPagoMetodo] = useState('MONEDERO')
-  const [tarjeta, setTarjeta] = useState({
-    titular: '',
-    numero: '',
-    vence: '',
-    cvv: '',
-  })
   const [reservaVehId, setReservaVehId] = useState('')
   const [reservaMin, setReservaMin] = useState(15)
   const [ocuparVehId, setOcuparVehId] = useState('')
@@ -97,6 +92,26 @@ export default function EstacionamientoView() {
 
   useEffect(() => {
     load()
+  }, [])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const sesion = params.get('sesion')
+    if (params.get('stripe') === 'exito' && sesion) {
+      ;(async () => {
+        try {
+          const { data } = await api.post('/pagos/stripe/confirmar', { sesionId: sesion })
+          setSuccess(data.mensaje || 'Pago confirmado.')
+        } catch (err) {
+          setError(err.response?.data || 'No fue posible confirmar el pago con Stripe.')
+        }
+        load()
+      })()
+    } else if (params.get('stripe') === 'cancelado') {
+      setError('El pago fue cancelado.')
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -181,7 +196,6 @@ export default function EstacionamientoView() {
     }
     setOcupadoSpace(s)
     setPagoMetodo('MONEDERO')
-    setTarjeta({ titular: '', numero: '', vence: '', cvv: '' })
   }
 
   const crearReserva = async () => {
@@ -255,40 +269,35 @@ export default function EstacionamientoView() {
     if (!entry || !esMiEspacio) return
     setSaving(`pagar-${entry.codeEntradaSalida}`)
     setError('')
+    setSuccess('')
     try {
-      const detalle = detalleMiEstancia(entry)
-      const fechaSalida = new Date().toISOString()
-      const monto = detalle.totalPagar != null ? detalle.totalPagar : 0
       if (pagoMetodo === 'MONEDERO') {
+        const detalle = detalleMiEstancia(entry)
+        const fechaSalida = new Date().toISOString()
+        const monto = detalle.totalPagar != null ? detalle.totalPagar : 0
         await api.post(`/entradaSalida/${entry.codeEntradaSalida}/pagar-con-monedero`)
-      } else {
-        if (!tarjeta.titular.trim() || tarjeta.numero.trim().length < 12 || !tarjeta.vence || !tarjeta.cvv) {
-          setError('Completa los datos de la tarjeta correctamente.')
-          setSaving(null)
-          return
-        }
-        await api.post('/pago', {
-          monto,
-          fechaPago: fechaSalida,
-          metodoPago: pagoMetodo,
-          entradaSalida: { codeEntradaSalida: entry.codeEntradaSalida },
+        await api.put(`/entradaSalida/${entry.codeEntradaSalida}`, {
+          fechaEntrada: entry.fechaEntrada,
+          fechaSalida,
+          horasConsumidas: detalle.horasConsumidas,
+          totalPagar: monto,
+          estado: 'PAGADO',
+          vehiculo: entry.vehiculo?.codeVehiculo
+            ? { codeVehiculo: entry.vehiculo.codeVehiculo }
+            : null,
+          espacio: entry.espacio?.codeEspacio
+            ? { codeEspacio: entry.espacio.codeEspacio }
+            : null,
         })
+        setOcupadoSpace(null)
+        load()
+      } else {
+        const { data } = await api.post('/pagos/stripe/estancia', {
+          codeEntradaSalida: entry.codeEntradaSalida,
+          metodoPago: pagoMetodo,
+        })
+        window.location.href = data.url
       }
-      await api.put(`/entradaSalida/${entry.codeEntradaSalida}`, {
-        fechaEntrada: entry.fechaEntrada,
-        fechaSalida,
-        horasConsumidas: detalle.horasConsumidas,
-        totalPagar: monto,
-        estado: 'PAGADO',
-        vehiculo: entry.vehiculo?.codeVehiculo
-          ? { codeVehiculo: entry.vehiculo.codeVehiculo }
-          : null,
-        espacio: entry.espacio?.codeEspacio
-          ? { codeEspacio: entry.espacio.codeEspacio }
-          : null,
-      })
-      setOcupadoSpace(null)
-      load()
     } catch (err) {
       setError(err.response?.data || 'No fue posible cerrar y pagar la estancia.')
     } finally {
@@ -681,14 +690,15 @@ export default function EstacionamientoView() {
       <Modal
         open={ocupadoSpace !== null}
         title={ocupadoSpace ? `Espacio ${ocupadoSpace.numero} ocupado` : ''}
-        onClose={() => { setOcupadoSpace(null); setPagarMi(null); }}
+        onClose={() => setOcupadoSpace(null)}
       >
         {entryOcupado && esMiEspacio && !esPagada(entryOcupado) ? (
           (() => {
             const detalle = detalleMiEstancia(entryOcupado)
             return (
               <>
-                {error && <div className="alert alert-error">{error}</div>}
+{error && <div className="alert alert-error">{error}</div>}
+      {success && <div className="alert alert-success">{success}</div>}
                 <p>
                   Tu estancia: <strong>{entryOcupado.vehiculo?.placas || 'tu vehículo'}</strong> desde{' '}
                   {new Date(entryOcupado.fechaEntrada).toLocaleString()}.
@@ -705,56 +715,17 @@ export default function EstacionamientoView() {
                     onChange={(e) => setPagoMetodo(e.target.value)}
                   >
                     <option value="MONEDERO">Monedero electrónico</option>
-                    <option value="TARJETA_CREDITO">Tarjeta de crédito</option>
-                    <option value="TARJETA_DEBITO">Tarjeta de débito</option>
+                    <option value="TARJETA_CREDITO">Tarjeta de crédito (Stripe)</option>
+                    <option value="TARJETA_DEBITO">Tarjeta de débito (Stripe)</option>
                   </select>
                 </div>
                 {pagoMetodo !== 'MONEDERO' && (
-                  <>
-                    <div className="form-group">
-                      <label>Nombre del titular</label>
-                      <input
-                        placeholder="Como aparece en la tarjeta"
-                        value={tarjeta.titular}
-                        onChange={(e) => setTarjeta({ ...tarjeta, titular: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Número de tarjeta</label>
-                      <input
-                        placeholder="16 dígitos"
-                        maxLength={16}
-                        value={tarjeta.numero}
-                        onChange={(e) => setTarjeta({ ...tarjeta, numero: e.target.value.replace(/\D/g, '') })}
-                        required
-                      />
-                    </div>
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label>Vencimiento</label>
-                        <input
-                          type="month"
-                          value={tarjeta.vence}
-                          onChange={(e) => setTarjeta({ ...tarjeta, vence: e.target.value })}
-                          required
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>CVV</label>
-                        <input
-                          placeholder="3 o 4 dígitos"
-                          maxLength={4}
-                          value={tarjeta.cvv}
-                          onChange={(e) => setTarjeta({ ...tarjeta, cvv: e.target.value.replace(/\D/g, '') })}
-                          required
-                        />
-                      </div>
-                    </div>
-                  </>
+                  <p className="form-hint">
+                    Se abrirá la página segura de Stripe para pagar con tu tarjeta.
+                  </p>
                 )}
                 <div className="form-actions">
-                  <button type="button" className="btn btn-secondary" onClick={() => { setOcupadoSpace(null); setPagarMi(null); }}>
+                  <button type="button" className="btn btn-secondary" onClick={() => setOcupadoSpace(null)}>
                     Cancelar
                   </button>
                   <button
