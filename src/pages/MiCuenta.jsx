@@ -44,6 +44,35 @@ export default function MiCuenta() {
     load()
   }, [load])
 
+  const confirmarStripe = async (sesionId) => {
+    setSaving(true)
+    setError('')
+    setSuccess('')
+    try {
+      const { data } = await api.post('/pagos/stripe/confirmar', { sesionId })
+      const w = await api.get('/wallet')
+      setWallet(w.data)
+      setSuccess(data.mensaje || 'Tu monedero fue recargado correctamente.')
+    } catch (err) {
+      setError(err.response?.data || 'No fue posible confirmar la recarga con Stripe.')
+    } finally {
+      setSaving(false)
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const sesion = params.get('sesion')
+    if (params.get('stripe') === 'exito' && sesion) {
+      confirmarStripe(sesion)
+    } else if (params.get('stripe') === 'cancelado') {
+      setError('La recarga fue cancelada. Inténtalo cuando quieras.')
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(t)
@@ -70,17 +99,18 @@ export default function MiCuenta() {
       setError('Ingresa un monto válido para recargar.')
       return
     }
+    if (monto < 10) {
+      setError('El monto mínimo de recarga es de $10.00 MXN.')
+      return
+    }
     setSaving(true)
     setError('')
     setSuccess('')
     try {
-      const { data } = await api.post('/wallet/recargar', { monto })
-      setWallet(data)
-      setRecarga('')
-      setSuccess('Tu monedero fue recargado correctamente.')
-    } catch {
-      setError('No fue posible recargar tu monedero.')
-    } finally {
+      const { data } = await api.post('/pagos/stripe/recarga', { monto })
+      window.location.href = data.url
+    } catch (err) {
+      setError(err.response?.data || 'No fue posible iniciar la recarga con Stripe.')
       setSaving(false)
     }
   }
@@ -148,12 +178,13 @@ export default function MiCuenta() {
             onClick={recargar}
             disabled={saving || !recarga}
           >
-            Recargar monedero
+            {saving ? 'Procesando...' : 'Recargar con Stripe'}
           </button>
         </div>
         <p className="wallet-hint">
-          Con tu saldo pagas tus estancias desde aquí o cuando el operador cobra
-          tu QR en la salida.
+          La recarga se cobra de verdad a tu tarjeta mediante Stripe. Con tu
+          saldo pagas tus estancias desde aquí o cuando el operador cobra tu QR
+          en la salida.
         </p>
       </section>
 
